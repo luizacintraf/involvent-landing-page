@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <script>
+      // Força a abertura como aplicativo web
+      window.onload = function() {
+        var currentUrl = window.location.href;
+        if (currentUrl.includes('/exec')) {
+          // Já está na URL correta
+          return;
+        }
+        
+        // Redireciona para a URL do aplicativo
+        var newUrl = currentUrl.replace('/view', '/exec');
+        window.location.href = newUrl;
+      }
+    </script>
+  </head>
+  <body>
+    <p>Redirecionando...</p>
+  </body>
+</html> 

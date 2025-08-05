@@ -1,0 +1,1114 @@
+function doGet(e) {
+  // Verifica se está tentando abrir como arquivo do Drive
+  const url = ScriptApp.getService().getUrl();
+  if (url && url.includes('/view')) {
+    return HtmlService.createHtmlOutputFromFile('redirect')
+      .setTitle('Redirecionando...');
+  }
+  
+  // Retorna a aplicação normal
+  return HtmlService.createHtmlOutputFromFile('index')
+    .setTitle('3ª Festa Julina PD Castelo')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+function getSpreadsheetData(tabName) {
+  try {
+    // Usa a planilha ativa do projeto
+    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = spreadsheet.getSheetByName(tabName);
+    
+    if (!sheet) {
+      return {
+        success: false,
+        error: `Aba "${tabName}" não encontrada`
+      };
+    }
+    
+    // Pega todos os dados da planilha
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    
+    // Converte os dados em um array de objetos
+    const rows = data.slice(1).map(row => {
+      const obj = {};
+      headers.forEach((header, index) => {
+        // Trata valores especiais
+        let value = row[index];
+        
+        // Converte datas para string ISO
+        if (value instanceof Date) {
+          value = value.toISOString();
+        }
+        // Converte números para garantir que sejam do tipo number
+        else if (typeof value === 'number' || !isNaN(value)) {
+          value = Number(value);
+        }
+        
+        obj[header] = value;
+      });
+      return obj;
+    });
+    
+    return {
+      success: true,
+      data: rows,
+      metadata: {
+        total: rows.length,
+        headers: headers,
+        lastUpdate: new Date().toISOString()
+      }
+    };
+    
+  } catch (error) {
+    // Log do erro para debug
+    Logger.log('Erro ao acessar planilha: ' + error.toString());
+    return {
+      success: false,
+      error: 'Erro ao acessar dados da planilha',
+      details: error.toString()
+    };
+  }
+}
+
+function appendRows(sheetName, rows) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(sheetName);
+    
+    if (!sheet) {
+      throw new Error(`Aba ${sheetName} não encontrada`);
+    }
+    
+    // Pega os headers da planilha
+    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    Logger.log('Headers da planilha:', headers);
+    Logger.log('Dados recebidos:', JSON.stringify(rows));
+    
+    // Formata as linhas de acordo com os headers
+    const formattedRows = rows.map(row => {
+      return headers.map(header => {
+        const value = row[header] || '';
+        Logger.log(`Mapeando header "${header}" para valor: ${value}`);
+        return value;
+      });
+    });
+    
+    // Adiciona as linhas
+    sheet.getRange(sheet.getLastRow() + 1, 1, formattedRows.length, headers.length)
+      .setValues(formattedRows);
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Erro ao salvar dados:', error);
+    throw error;
+  }
+}
+
+function uploadFile(base64Data) {
+  try {
+    Logger.log('Iniciando upload do arquivo');
+    Logger.log('Tamanho do base64: ' + base64Data.length);
+    
+    // Cria uma pasta específica para os comprovantes se não existir
+    const folderName = 'Comprovantes Ingressos';
+    let folder = DriveApp.getFoldersByName(folderName);
+    
+    if (folder.hasNext()) {
+      folder = folder.next();
+      Logger.log('Pasta existente encontrada: ' + folder.getId());
+    } else {
+      folder = DriveApp.createFolder(folderName);
+      Logger.log('Nova pasta criada: ' + folder.getId());
+    }
+
+    // Verifica se o base64 está no formato correto
+    if (!base64Data || !base64Data.includes('base64,')) {
+      throw new Error('Formato de base64 inválido');
+    }
+
+    // Extrai informações do base64
+    const matches = base64Data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) {
+      throw new Error('Formato de base64 inválido - não foi possível extrair tipo e dados');
+    }
+
+    const mimeType = matches[1];
+    const base64String = matches[2];
+    
+    Logger.log('Tipo do arquivo: ' + mimeType);
+    Logger.log('Tamanho do base64 limpo: ' + base64String.length);
+
+    // Decodifica o base64
+    try {
+      const decoded = Utilities.base64Decode(base64String);
+      Logger.log('Base64 decodificado com sucesso. Tamanho: ' + decoded.length);
+      
+      const blob = Utilities.newBlob(decoded, mimeType, `comprovante_${new Date().getTime()}`);
+      Logger.log('Blob criado com sucesso');
+      
+      // Salva o arquivo no Drive
+      const file = folder.createFile(blob);
+      Logger.log('Arquivo criado no Drive: ' + file.getId());
+      
+      // Configura permissões de visualização
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      Logger.log('Permissões configuradas');
+      
+      const fileUrl = file.getUrl();
+      Logger.log('URL do arquivo: ' + fileUrl);
+
+      return {
+        success: true,
+        fileUrl: fileUrl,
+        fileId: file.getId(),
+        mimeType: mimeType
+      };
+    } catch (decodeError) {
+      Logger.log('Erro ao decodificar base64: ' + decodeError.toString());
+      throw new Error('Falha ao decodificar base64: ' + decodeError.message);
+    }
+  } catch (error) {
+    Logger.log('Erro no upload: ' + error.toString());
+    return {
+      success: false,
+      error: error.message,
+      details: error.toString()
+    };
+  }
+}
+
+function sendConfirmationEmail(data) {
+  try {
+    Logger.log('Iniciando envio de email');
+    Logger.log('Dados recebidos:', JSON.stringify(data));
+    
+    if (!data.to || !data.orderId || !data.pedido) {
+      throw new Error('Dados incompletos para envio do email');
+    }
+    
+    const { to, orderId, pedido } = data;
+    Logger.log('Email para:', to);
+    Logger.log('OrderId:', orderId);
+    Logger.log('Dados do pedido:', JSON.stringify(pedido));
+    
+    // Formata a lista de ingressos em HTML
+    const ingressosList = pedido.participantes.map(participante => `
+      <tr>
+        <td style="padding: 10px; border-bottom: 1px solid #eee;">
+          <strong>${participante.tipo}</strong><br>
+          <span style="color: #666;">Participante: ${participante.nome}</span><br>
+          ${participante.unidade ? `<span style="color: #666;">Unidade: ${participante.unidade}</span>` : ''}
+        </td>
+      </tr>
+    `).join('');
+    Logger.log('Lista de ingressos HTML gerada');
+
+    // Formata o valor total
+    const totalFormatted = pedido.total.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    });
+    Logger.log('Total formatado:', totalFormatted);
+
+    // Template do email em HTML
+    const htmlBody = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h1 style="color: #4a5568; text-align: center; margin-bottom: 30px;">
+          Confirmação de Compra - Festa Julina PD Castelo
+        </h1>
+        
+        <div style="background-color: #f7fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+          <p style="margin-bottom: 10px;">Olá <strong>${pedido.dadosComprador.nome}</strong>,</p>
+          <p style="margin-bottom: 20px;">Obrigado por comprar seus ingressos para a 3ª Festa Julina do PD Castelo!</p>
+          
+          <div style="background-color: #ebf8ff; border: 1px solid #bee3f8; border-radius: 4px; padding: 10px; margin-bottom: 20px;">
+            <p style="margin: 0; color: #2b6cb0;"><strong>Número do Pedido:</strong> ${orderId}</p>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 30px;">
+          <h2 style="color: #4a5568; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">Detalhes da Compra</h2>
+          
+          <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+            <thead>
+              <tr>
+                <th style="text-align: left; padding: 10px; background-color: #f7fafc; border-bottom: 2px solid #e2e8f0;">
+                  Ingressos
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              ${ingressosList}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td style="padding: 15px; text-align: right; border-top: 2px solid #e2e8f0;">
+                  <strong>Total:</strong> ${totalFormatted}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div style="background-color: #f7fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px;">
+          <h3 style="color: #4a5568; margin-top: 0;">Importante:</h3>
+          <ul style="color: #4a5568; margin-bottom: 0;">
+            <li>Guarde este número de pedido: ${orderId}</li>
+            <li>Os nomes cadastrados nos ingressos estarão na portaria no dia do evento</li>
+          </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px; color: #718096; font-size: 14px;">
+          <p>Em caso de dúvidas, entre em contato conosco.</p>
+          <p style="margin-top: 20px;">
+            Atenciosamente,<br>
+            <strong>Equipe PD Castelo</strong>
+          </p>
+        </div>
+      </div>
+    `;
+    Logger.log('Template HTML do email gerado');
+
+    // Prepara o texto plano
+    const plainText = `
+        Confirmação de Compra - Festa Julina PD Castelo
+        
+        Olá ${pedido.dadosComprador.nome},
+        
+        Obrigado por comprar seus ingressos para a 3ª Festa Julina do PD Castelo!
+        
+        Número do Pedido: ${orderId}
+        
+        Detalhes da Compra:
+        
+        ${pedido.participantes.map(p => `
+          - ${p.tipo}
+            Participante: ${p.nome}
+            ${p.unidade ? `Unidade: ${p.unidade}` : ''}
+        `).join('\n')}
+        
+        Total: ${totalFormatted}
+        
+        Importante:
+        - Guarde este número de pedido: ${orderId}
+        - Apresente este email no dia do evento
+        - Para ingressos que necessitam de verificação, aguarde nossa confirmação
+        
+        Em caso de dúvidas, entre em contato conosco.
+        
+        Atenciosamente,
+        Equipe PD Castelo
+    `;
+    Logger.log('Texto plano do email gerado');
+
+    try {
+      // Envia o email
+      Logger.log('Tentando enviar email para:', to);
+      MailApp.sendEmail({
+        to: to,
+        subject: `Confirmação de Compra - Festa Julina PD Castelo - Pedido ${orderId}`,
+        htmlBody: htmlBody,
+        body: plainText
+      });
+      Logger.log('Email enviado com sucesso para:', to);
+    } catch (sendError) {
+      Logger.log('Erro ao enviar email:', sendError.toString());
+      throw new Error(`Falha ao enviar email: ${sendError.message}`);
+    }
+
+    return { success: true };
+  } catch (error) {
+    Logger.log('Erro no processo de email:', error.toString());
+    return {
+      success: false,
+      error: 'Erro ao enviar email de confirmação',
+      details: error.toString()
+    };
+  }
+}
+
+// Spreadsheet to store tokens
+const TOKENS_SHEET_NAME = 'token';
+
+function setupTokensSheet() {
+  try {
+    Logger.log('Iniciando setupTokensSheet...');
+    const ss = SpreadsheetApp.getActive();
+    Logger.log('Planilha ativa obtida: ' + ss.getName());
+    
+    let sheet = ss.getSheetByName(TOKENS_SHEET_NAME);
+    Logger.log('Procurando aba "' + TOKENS_SHEET_NAME + '": ' + (sheet ? 'encontrada' : 'não encontrada'));
+    
+    if (!sheet) {
+      Logger.log('Criando nova aba "' + TOKENS_SHEET_NAME + '"...');
+      sheet = ss.insertSheet(TOKENS_SHEET_NAME);
+      Logger.log('Aba criada com sucesso. ID: ' + sheet.getSheetId());
+      
+      Logger.log('Configurando headers...');
+      sheet.getRange('A1:E1').setValues([['OrderNumber', 'Email', 'Token', 'CreatedAt', 'Used']]);
+      sheet.setFrozenRows(1);
+      Logger.log('Headers configurados');
+    } else {
+      Logger.log('Aba já existe. Última linha: ' + sheet.getLastRow());
+    }
+    
+    return sheet;
+  } catch (error) {
+    Logger.log('ERRO em setupTokensSheet:', error.toString());
+    throw error;
+  }
+}
+
+function generateToken() {
+  return Math.random().toString(36).substring(2, 8).toUpperCase();
+}
+
+function requestEditToken(params) {
+  try {
+    Logger.log('=== INICIANDO REQUISIÇÃO DE TOKEN ===');
+    Logger.log('Parâmetros recebidos:', JSON.stringify(params));
+    Logger.log('Tipo dos parâmetros:', typeof params);
+
+    // Extrai os parâmetros do objeto
+    let orderNumber, email;
+    
+    if (typeof params === 'object' && params !== null) {
+      orderNumber = params.orderNumber;
+      email = params.email;
+    } else {
+      // Fallback para chamadas com parâmetros separados (compatibilidade)
+      orderNumber = arguments[0];
+      email = arguments[1];
+    }
+
+    Logger.log('Número do Pedido extraído: [' + orderNumber + ']');
+    Logger.log('Email extraído: [' + email + ']');
+
+    // Log dos parâmetros recebidos para debug
+    Logger.log('Tipo do orderNumber:', typeof orderNumber);
+    Logger.log('Tipo do email:', typeof email);
+    Logger.log('orderNumber raw:', orderNumber);
+    Logger.log('email raw:', email);
+
+    // Validação e extração dos parâmetros
+    let cleanOrderNumber, cleanEmail;
+
+    // Trata o caso onde orderNumber pode ser um objeto
+    if (typeof orderNumber === 'object' && orderNumber !== null) {
+      // Se for um objeto, tenta extrair propriedades comuns
+      if (orderNumber.orderNumber) {
+        cleanOrderNumber = orderNumber.orderNumber.toString().trim();
+      } else if (orderNumber.orderId) {
+        cleanOrderNumber = orderNumber.orderId.toString().trim();
+      } else if (orderNumber.id) {
+        cleanOrderNumber = orderNumber.id.toString().trim();
+      } else {
+        Logger.log('ERRO: Objeto orderNumber não contém propriedades reconhecidas:', JSON.stringify(orderNumber));
+        return { success: false, message: 'Formato do número do pedido inválido' };
+      }
+    } else if (orderNumber) {
+      cleanOrderNumber = orderNumber.toString().trim();
+    } else {
+      Logger.log('ERRO: Número do pedido não fornecido');
+      return { success: false, message: 'Número do pedido é obrigatório' };
+    }
+
+    // Trata o caso onde email pode ser um objeto
+    if (typeof email === 'object' && email !== null) {
+      if (email.email) {
+        cleanEmail = email.email.toString().trim().toLowerCase();
+      } else {
+        Logger.log('ERRO: Objeto email não contém propriedade email:', JSON.stringify(email));
+        return { success: false, message: 'Formato do email inválido' };
+      }
+    } else if (email) {
+      cleanEmail = email.toString().trim().toLowerCase();
+    } else {
+      Logger.log('ERRO: Email não fornecido');
+      return { success: false, message: 'Email é obrigatório' };
+    }
+
+    // Validação final
+    if (!cleanOrderNumber || cleanOrderNumber === '') {
+      Logger.log('ERRO: Número do pedido vazio após limpeza');
+      return { success: false, message: 'Número do pedido é obrigatório' };
+    }
+
+    if (!cleanEmail || cleanEmail === '') {
+      Logger.log('ERRO: Email vazio após limpeza');
+      return { success: false, message: 'Email é obrigatório' };
+    }
+
+    Logger.log('Parâmetros limpos:');
+    Logger.log('Order Number: [' + cleanOrderNumber + ']');
+    Logger.log('Email: [' + cleanEmail + ']');
+
+    // Get the orders sheet
+    const ordersSheet = SpreadsheetApp.getActive().getSheetByName('ingressos');
+    if (!ordersSheet) {
+      Logger.log('ERRO: Aba "ingressos" não encontrada na planilha');
+      return { success: false, message: 'Aba de pedidos não encontrada' };
+    }
+
+    Logger.log('=== DADOS DA PLANILHA ===');
+    const ordersData = ordersSheet.getDataRange().getValues();
+    Logger.log('Número total de linhas: ' + ordersData.length);
+    
+    // Log dos headers
+    const headers = ordersData[0];
+    Logger.log('Headers encontrados: [' + headers.join(', ') + ']');
+    
+    // Log das primeiras linhas
+    Logger.log('Primeiras 3 linhas da planilha:');
+    ordersData.slice(0, 3).forEach((row, index) => {
+      Logger.log(`Linha ${index}: [${row.join(', ')}]`);
+    });
+
+    // Encontrar índices das colunas
+    const orderNumberIndex = headers.findIndex(h => h.toString().toLowerCase().includes('order'));
+    const emailIndex = headers.findIndex(h => h.toString().toLowerCase().includes('email') && !h.toString().toLowerCase().includes('vendido'));
+    const emailVendidoIndex = headers.findIndex(h => h.toString().toLowerCase().includes('email_vendido'));
+
+    Logger.log('=== ÍNDICES DAS COLUNAS ===');
+    Logger.log('Índice da coluna Pedido: ' + orderNumberIndex);
+    Logger.log('Índice da coluna Email: ' + emailIndex);
+    Logger.log('Índice da coluna Email Vendido: ' + emailVendidoIndex);
+
+    if (orderNumberIndex === -1 || emailIndex === -1) {
+      Logger.log('ERRO: Colunas necessárias não encontradas');
+      return { 
+        success: false, 
+        message: 'Estrutura da planilha inválida',
+        debug: { headers, orderNumberIndex, emailIndex, emailVendidoIndex }
+      };
+    }
+
+    // Procurar o pedido
+    let found = false;
+    let foundRow = null;
+    
+    ordersData.forEach((row, index) => {
+      if (index === 0) return; // Pula o header
+      
+      const rowOrderNumber = row[orderNumberIndex]?.toString() || '';
+      const rowEmail = row[emailIndex]?.toString() || '';
+      const rowEmailVendido = emailVendidoIndex !== -1 ? (row[emailVendidoIndex]?.toString() || '') : '';
+      
+      Logger.log(`\nComparando linha ${index}:`);
+      Logger.log('Pedido na planilha: [' + rowOrderNumber + ']');
+      Logger.log('Email original na planilha: [' + rowEmail + ']');
+      Logger.log('Email vendido na planilha: [' + rowEmailVendido + ']');
+      Logger.log('Comparando com:');
+      Logger.log('Pedido fornecido: [' + cleanOrderNumber + ']');
+      Logger.log('Email fornecido: [' + cleanEmail + ']');
+      
+      // Verifica se o pedido corresponde E se o email corresponde ao original OU ao vendido
+      const emailMatch = rowEmail.toLowerCase() === cleanEmail || 
+                         (rowEmailVendido && rowEmailVendido.toLowerCase() === cleanEmail);
+      
+      if (rowOrderNumber === cleanOrderNumber && emailMatch) {
+        found = true;
+        foundRow = row;
+        Logger.log('>>> PEDIDO ENCONTRADO NA LINHA ' + index);
+        if (rowEmailVendido && rowEmailVendido.toLowerCase() === cleanEmail) {
+          Logger.log('>>> ENCONTRADO PELO EMAIL VENDIDO');
+        } else {
+          Logger.log('>>> ENCONTRADO PELO EMAIL ORIGINAL');
+        }
+      }
+    });
+
+    if (!found) {
+      Logger.log('ERRO: Pedido não encontrado');
+      return { 
+        success: false, 
+        message: 'Pedido não encontrado ou email não corresponde. Verifique o número do pedido e use o email original da compra ou o email atualizado (se foi editado).',
+        debug: { orderNumber: cleanOrderNumber, email: cleanEmail }
+      };
+    }
+
+    // Generate and store token
+    const token = generateToken();
+    Logger.log('\n=== GERANDO TOKEN ===');
+    Logger.log('Token gerado: ' + token);
+
+    Logger.log('Configurando planilha de tokens...');
+    const tokensSheet = setupTokensSheet();
+    Logger.log('Planilha de tokens configurada. Nome: ' + tokensSheet.getName());
+    
+    Logger.log('Adicionando linha na planilha de tokens...');
+    Logger.log('Dados a serem salvos:', [cleanOrderNumber, cleanEmail, token, new Date(), false]);
+    
+    try {
+      tokensSheet.appendRow([
+        cleanOrderNumber,
+        cleanEmail,
+        token,
+        new Date(),
+        false
+      ]);
+      Logger.log('Token salvo na planilha com sucesso');
+      
+      // Verifica se foi salvo
+      const lastRow = tokensSheet.getLastRow();
+      Logger.log('Última linha da planilha de tokens: ' + lastRow);
+      
+      if (lastRow > 1) {
+        const savedData = tokensSheet.getRange(lastRow, 1, 1, 5).getValues()[0];
+        Logger.log('Dados salvos verificados:', savedData);
+      }
+    } catch (saveError) {
+      Logger.log('ERRO ao salvar token na planilha:', saveError.toString());
+      return { success: false, message: 'Erro ao salvar token: ' + saveError.message };
+    }
+
+    // Send email with token
+    const emailBody = `
+      Olá,
+      
+      Recebemos sua solicitação para editar o pedido ${cleanOrderNumber}.
+      
+      Seu token de verificação é: ${token}
+      
+      Este token é válido por 30 minutos.
+      
+      Se você não solicitou esta alteração, por favor ignore este email.
+      
+      Atenciosamente,
+      Equipe PD Castelo
+    `;
+
+    MailApp.sendEmail({
+      to: cleanEmail,
+      subject: `Token de Verificação - Pedido ${cleanOrderNumber}`,
+      body: emailBody
+    });
+    Logger.log('Email enviado com sucesso');
+
+    return { success: true };
+  } catch (error) {
+    Logger.log('\n=== ERRO NA EXECUÇÃO ===');
+    Logger.log('Mensagem: ' + error.message);
+    Logger.log('Stack: ' + error.stack);
+    return { 
+      success: false, 
+      message: 'Erro ao gerar token: ' + error.message,
+      debug: { error: error.message, stack: error.stack }
+    };
+  }
+}
+
+function verifyEditToken(params) {
+  try {
+    Logger.log('Iniciando verifyEditToken');
+    Logger.log('Parâmetros recebidos:', JSON.stringify(params));
+    Logger.log('Tipo dos parâmetros:', typeof params);
+
+    // Extrai os parâmetros do objeto
+    let orderNumber, token;
+    
+    if (typeof params === 'object' && params !== null) {
+      orderNumber = params.orderNumber;
+      token = params.token;
+    } else {
+      // Fallback para chamadas com parâmetros separados (compatibilidade)
+      orderNumber = arguments[0];
+      token = arguments[1];
+    }
+
+    Logger.log('orderNumber extraído:', orderNumber);
+    Logger.log('token extraído:', token);
+
+    // Log dos parâmetros recebidos para debug
+    Logger.log('Tipo do orderNumber:', typeof orderNumber);
+    Logger.log('Tipo do token:', typeof token);
+    Logger.log('orderNumber raw:', orderNumber);
+    Logger.log('token raw:', token);
+
+    // Validação e extração dos parâmetros
+    let cleanOrderNumber, cleanToken;
+
+    // Trata o caso onde orderNumber pode ser um objeto
+    if (typeof orderNumber === 'object' && orderNumber !== null) {
+      if (orderNumber.orderNumber) {
+        cleanOrderNumber = orderNumber.orderNumber.toString().trim();
+      } else if (orderNumber.orderId) {
+        cleanOrderNumber = orderNumber.orderId.toString().trim();
+      } else if (orderNumber.id) {
+        cleanOrderNumber = orderNumber.id.toString().trim();
+      } else {
+        Logger.log('ERRO: Objeto orderNumber não contém propriedades reconhecidas:', JSON.stringify(orderNumber));
+        return { success: false, message: 'Formato do número do pedido inválido' };
+      }
+    } else if (orderNumber) {
+      cleanOrderNumber = orderNumber.toString().trim();
+    } else {
+      Logger.log('Erro: Número do pedido não fornecido');
+      return { success: false, message: 'Número do pedido é obrigatório' };
+    }
+
+    // Trata o caso onde token pode ser um objeto
+    if (typeof token === 'object' && token !== null) {
+      if (token.token) {
+        cleanToken = token.token.toString().trim().toUpperCase();
+      } else {
+        Logger.log('ERRO: Objeto token não contém propriedade token:', JSON.stringify(token));
+        return { success: false, message: 'Formato do token inválido' };
+      }
+    } else if (token) {
+      cleanToken = token.toString().trim().toUpperCase();
+    } else {
+      Logger.log('Erro: Token não fornecido');
+      return { success: false, message: 'Token é obrigatório' };
+    }
+
+    // Validação final
+    if (!cleanOrderNumber || cleanOrderNumber === '') {
+      Logger.log('Erro: Número do pedido vazio após limpeza');
+      return { success: false, message: 'Número do pedido é obrigatório' };
+    }
+
+    if (!cleanToken || cleanToken === '') {
+      Logger.log('Erro: Token vazio após limpeza');
+      return { success: false, message: 'Token é obrigatório' };
+    }
+
+    Logger.log('Parâmetros limpos:');
+    Logger.log('Order Number: [' + cleanOrderNumber + ']');
+    Logger.log('Token: [' + cleanToken + ']');
+
+    const tokensSheet = SpreadsheetApp.getActive().getSheetByName(TOKENS_SHEET_NAME);
+    if (!tokensSheet) {
+      Logger.log('Erro: Planilha de tokens não encontrada');
+      return { success: false, message: 'Planilha de tokens não encontrada' };
+    }
+
+    const tokensData = tokensSheet.getDataRange().getValues();
+    Logger.log('Total de tokens encontrados:', tokensData.length);
+    
+    // Find the most recent token for this order
+    const tokenRow = tokensData
+      .slice(1) // Skip header row
+      .reverse() // Get most recent first
+      .find(row => {
+        Logger.log('Verificando token:', {
+          rowOrderNumber: row[0]?.toString(),
+          rowToken: row[2]?.toString(),
+          rowUsed: row[4],
+          providedOrderNumber: cleanOrderNumber,
+          providedToken: cleanToken
+        });
+        return row[0]?.toString() === cleanOrderNumber && 
+               row[2]?.toString() === cleanToken &&
+               !row[4]; // Not used
+      });
+
+    Logger.log('Token encontrado:', tokenRow ? 'Sim' : 'Não');
+
+    if (!tokenRow) {
+      Logger.log('Token inválido ou expirado');
+      return { success: false, message: 'Token inválido ou expirado.' };
+    }
+
+    const createdAt = new Date(tokenRow[3]);
+    const now = new Date();
+    const minutesDiff = (now - createdAt) / (1000 * 60);
+
+    Logger.log('Minutos desde a criação:', minutesDiff);
+
+    if (minutesDiff > 30) {
+      Logger.log('Token expirado');
+      return { success: false, message: 'Token expirado.' };
+    }
+
+    // Mark token as used
+    const tokenIndex = tokensData.findIndex(row => 
+      row[0]?.toString() === cleanOrderNumber && 
+      row[2]?.toString() === cleanToken
+    );
+    Logger.log('Índice do token para marcar como usado:', tokenIndex);
+
+    tokensSheet.getRange(tokenIndex + 1, 5).setValue(true);
+    Logger.log('Token marcado como usado');
+
+    // Get order data
+    const ordersSheet = SpreadsheetApp.getActive().getSheetByName('ingressos');
+    if (!ordersSheet) {
+      Logger.log('Erro: Aba "ingressos" não encontrada');
+      return { success: false, message: 'Aba "ingressos" não encontrada' };
+    }
+
+    Logger.log('Buscando dados do pedido...');
+    const ordersData = ordersSheet.getDataRange().getValues();
+    const headers = ordersData[0];
+    
+    Logger.log('Headers da planilha ingressos:', headers);
+    
+    // Encontra os índices corretos das colunas
+    const orderIndex = headers.findIndex(h => h.toString().toLowerCase().includes('order'));
+    const nomeCompradorIndex = headers.findIndex(h => h.toString().toLowerCase().includes('nome_comprador'));
+    const emailIndex = headers.findIndex(h => h.toString().toLowerCase().includes('email'));
+    const nomeParticipanteIndex = headers.findIndex(h => h.toString().toLowerCase().includes('nome_participante'));
+    const unidadeIndex = headers.findIndex(h => h.toString().toLowerCase().includes('unidade'));
+    const tipoIndex = headers.findIndex(h => h.toString().toLowerCase().includes('tipo'));
+    
+    Logger.log('Índices encontrados:', {
+      orderIndex,
+      nomeCompradorIndex,
+      emailIndex,
+      nomeParticipanteIndex,
+      unidadeIndex,
+      tipoIndex
+    });
+    
+    const orderData = ordersData.find(row => row[orderIndex]?.toString() === cleanOrderNumber);
+
+    Logger.log('Dados do pedido encontrados:', orderData ? 'Sim' : 'Não');
+    if (orderData) {
+      Logger.log('Dados brutos do pedido:', orderData);
+    }
+
+    if (!orderData) {
+      Logger.log('Pedido não encontrado');
+      return { success: false, message: 'Pedido não encontrado.' };
+    }
+
+    // Return order data for editing
+    const response = {
+      success: true,
+      orderData: {
+        orderNumber: orderData[orderIndex],
+        nomeComprador: orderData[nomeCompradorIndex],
+        email: orderData[emailIndex],
+        nomeParticipante: orderData[nomeParticipanteIndex],
+        unidade: orderData[unidadeIndex],
+        tipo: orderData[tipoIndex]
+      }
+    };
+    Logger.log('Retornando dados:', JSON.stringify(response));
+    return response;
+
+  } catch (error) {
+    Logger.log('ERRO em verifyEditToken:');
+    Logger.log('Mensagem:', error.message);
+    Logger.log('Stack:', error.stack);
+    return { 
+      success: false, 
+      message: 'Erro ao verificar token.',
+      error: error.message,
+      stack: error.stack 
+    };
+  }
+}
+
+function getOrderData(orderNumber) {
+  try {
+    Logger.log('Buscando dados do pedido:', orderNumber);
+    
+    const sheet = SpreadsheetApp.getActive().getSheetByName('ingressos');
+    if (!sheet) {
+      throw new Error('Aba de ingressos não encontrada');
+    }
+
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    
+    // Encontra o índice das colunas necessárias
+    const orderIndex = headers.findIndex(h => h.toString().toLowerCase().includes('order'));
+    const nomeCompradorIndex = headers.findIndex(h => h.toString().toLowerCase().includes('nome_comprador'));
+    const emailIndex = headers.findIndex(h => h.toString().toLowerCase().includes('email'));
+    const nomeParticipanteIndex = headers.findIndex(h => h.toString().toLowerCase().includes('nome_participante'));
+    const unidadeIndex = headers.findIndex(h => h.toString().toLowerCase().includes('unidade'));
+    const tipoIndex = headers.findIndex(h => h.toString().toLowerCase().includes('tipo'));
+    const valorIndex = headers.findIndex(h => h.toString().toLowerCase().includes('valor'));
+
+    // Filtra as linhas do pedido
+    const orderRows = data.slice(1).filter(row => row[orderIndex]?.toString() === orderNumber.toString());
+
+    if (!orderRows.length) {
+      throw new Error('Pedido não encontrado');
+    }
+
+    // Monta o objeto do pedido
+    const pedido = {
+      dadosComprador: {
+        nome: orderRows[0][nomeCompradorIndex],
+        email: orderRows[0][emailIndex]
+      },
+      participantes: orderRows.map(row => ({
+        nome: row[nomeParticipanteIndex],
+        tipo: row[tipoIndex],
+        unidade: row[unidadeIndex] || ''
+      })),
+      total: orderRows.reduce((total, row) => total + (Number(row[valorIndex]) || 0), 0)
+    };
+
+    return {
+      success: true,
+      data: pedido
+    };
+
+  } catch (error) {
+    Logger.log('Erro ao buscar dados do pedido:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+function resendOrderEmail(orderNumber) {
+  try {
+    Logger.log('Iniciando reenvio de email para o pedido:', orderNumber);
+    
+    // Busca os dados do pedido
+    const orderData = getOrderData(orderNumber);
+    if (!orderData.success) {
+      throw new Error(orderData.error || 'Erro ao buscar dados do pedido');
+    }
+
+    const pedido = orderData.data;
+    
+    // Envia o email usando a função existente
+    const emailResponse = sendConfirmationEmail({
+      to: pedido.dadosComprador.email,
+      orderId: orderNumber,
+      pedido: pedido
+    });
+
+    if (!emailResponse.success) {
+      throw new Error(emailResponse.error || 'Erro ao enviar email');
+    }
+
+    return {
+      success: true,
+      message: 'Email reenviado com sucesso'
+    };
+
+  } catch (error) {
+    Logger.log('Erro ao reenviar email:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+function getOrderTickets(orderNumber) {
+  try {
+    Logger.log('Buscando ingressos do pedido:', orderNumber);
+    
+    const sheet = SpreadsheetApp.getActive().getSheetByName('ingressos');
+    if (!sheet) {
+      throw new Error('Aba de ingressos não encontrada');
+    }
+
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    
+    Logger.log('Headers encontrados:', headers);
+    
+    // Encontra os índices das colunas
+    const orderIndex = headers.findIndex(h => h.toString().toLowerCase().includes('order'));
+    const nomeCompradorIndex = headers.findIndex(h => h.toString().toLowerCase().includes('nome_comprador'));
+    const emailIndex = headers.findIndex(h => h.toString().toLowerCase().includes('email'));
+    const nomeParticipanteIndex = headers.findIndex(h => h.toString().toLowerCase().includes('nome_participante'));
+    const unidadeIndex = headers.findIndex(h => h.toString().toLowerCase().includes('unidade'));
+    const tipoIndex = headers.findIndex(h => h.toString().toLowerCase().includes('tipo'));
+    
+    Logger.log('Índices das colunas:', {
+      orderIndex,
+      nomeCompradorIndex,
+      emailIndex,
+      nomeParticipanteIndex,
+      unidadeIndex,
+      tipoIndex
+    });
+
+    // Filtra as linhas do pedido
+    const orderTickets = data.slice(1).filter(row => row[orderIndex]?.toString() === orderNumber.toString());
+
+    if (!orderTickets.length) {
+      throw new Error('Nenhum ingresso encontrado para este pedido');
+    }
+
+    // Monta o array de ingressos
+    const ingressos = orderTickets.map((row, index) => ({
+      rowIndex: data.indexOf(row), // Índice da linha na planilha
+      order: row[orderIndex],
+      nome_comprador: row[nomeCompradorIndex],
+      email: row[emailIndex],
+      nome_participante: row[nomeParticipanteIndex],
+      unidade: row[unidadeIndex] || '',
+      tipo: row[tipoIndex]
+    }));
+
+    Logger.log('Ingressos encontrados:', ingressos.length);
+
+    return {
+      success: true,
+      data: ingressos
+    };
+
+  } catch (error) {
+    Logger.log('Erro ao buscar ingressos:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+function updateTicket(params) {
+  try {
+    Logger.log('=== INICIANDO ATUALIZAÇÃO DE INGRESSO ===');
+    Logger.log('Parâmetros recebidos:', JSON.stringify(params));
+
+    // Extrai os parâmetros
+    const { orderNumber, originalData, newName, newEmail } = params;
+
+    if (!orderNumber || !originalData || !newName || !newEmail) {
+      throw new Error('Parâmetros obrigatórios não fornecidos');
+    }
+
+    const sheet = SpreadsheetApp.getActive().getSheetByName('ingressos');
+    if (!sheet) {
+      throw new Error('Aba de ingressos não encontrada');
+    }
+
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    
+    // Encontra os índices das colunas
+    const orderIndex = headers.findIndex(h => h.toString().toLowerCase().includes('order'));
+    const nomeCompradorIndex = headers.findIndex(h => h.toString().toLowerCase().includes('nome_comprador'));
+    const emailIndex = headers.findIndex(h => h.toString().toLowerCase().includes('email'));
+    const nomeParticipanteIndex = headers.findIndex(h => h.toString().toLowerCase().includes('nome_participante'));
+    const unidadeIndex = headers.findIndex(h => h.toString().toLowerCase().includes('unidade'));
+    const tipoIndex = headers.findIndex(h => h.toString().toLowerCase().includes('tipo'));
+    
+    // Verifica se as colunas nome_antigo e email_vendido existem
+    let nomeAntigoIndex = headers.findIndex(h => h.toString().toLowerCase().includes('nome_antigo'));
+    let emailVendidoIndex = headers.findIndex(h => h.toString().toLowerCase().includes('email_vendido'));
+    
+    // Se as colunas não existem, adiciona elas
+    if (nomeAntigoIndex === -1) {
+      headers.push('nome_antigo');
+      nomeAntigoIndex = headers.length - 1;
+      sheet.getRange(1, nomeAntigoIndex + 1).setValue('nome_antigo');
+    }
+    
+    if (emailVendidoIndex === -1) {
+      headers.push('email_vendido');
+      emailVendidoIndex = headers.length - 1;
+      sheet.getRange(1, emailVendidoIndex + 1).setValue('email_vendido');
+    }
+
+    Logger.log('Índices das colunas:', {
+      orderIndex,
+      nomeCompradorIndex,
+      emailIndex,
+      nomeParticipanteIndex,
+      unidadeIndex,
+      tipoIndex,
+      nomeAntigoIndex,
+      emailVendidoIndex
+    });
+
+    // Encontra a linha específica do ingresso
+    const targetRowIndex = data.findIndex((row, index) => {
+      if (index === 0) return false; // Pula header
+      return row[orderIndex]?.toString() === orderNumber.toString() &&
+             row[nomeParticipanteIndex]?.toString() === originalData.nome_participante &&
+             row[tipoIndex]?.toString() === originalData.tipo;
+    });
+
+    if (targetRowIndex === -1) {
+      throw new Error('Ingresso específico não encontrado');
+    }
+
+    Logger.log('Linha encontrada:', targetRowIndex + 1);
+
+    // Salva o nome antigo e atualiza os dados
+    const oldName = data[targetRowIndex][nomeParticipanteIndex];
+    const oldEmail = data[targetRowIndex][emailIndex];
+    
+    // Atualiza a linha na planilha
+    sheet.getRange(targetRowIndex + 1, nomeAntigoIndex + 1).setValue(oldName);
+    sheet.getRange(targetRowIndex + 1, emailVendidoIndex + 1).setValue(newEmail);
+    sheet.getRange(targetRowIndex + 1, nomeParticipanteIndex + 1).setValue(newName);
+
+    Logger.log('Dados atualizados na planilha');
+
+    // Envia emails de notificação
+    try {
+      // Email para o email cadastrado (antigo)
+      const emailAntigoBody = `
+        Olá,
+        
+        Informamos que houve uma alteração no ingresso do pedido ${orderNumber}.
+        
+        Detalhes da alteração:
+        - Tipo do ingresso: ${originalData.tipo}
+        - Nome anterior: ${oldName}
+        - Novo nome: ${newName}
+        - Novo email: ${newEmail}
+        
+        Esta alteração foi solicitada através do sistema de edição de pedidos.
+        
+        Se você não solicitou esta alteração, entre em contato conosco imediatamente.
+        
+        Atenciosamente,
+        Equipe PD Castelo
+      `;
+
+      MailApp.sendEmail({
+        to: oldEmail,
+        subject: `Alteração no Pedido ${orderNumber} - PD Castelo`,
+        body: emailAntigoBody
+      });
+
+      // Email para o novo email
+      const emailNovoBody = `
+        Olá ${newName},
+        
+        Seu ingresso foi atualizado com sucesso!
+        
+        Detalhes do seu ingresso:
+        - Pedido: ${orderNumber}
+        - Tipo: ${originalData.tipo}
+        - Nome: ${newName}
+        - Email: ${newEmail}
+        
+        Guarde este número de pedido para apresentar no dia do evento.
+        
+        Atenciosamente,
+        Equipe PD Castelo
+      `;
+
+      MailApp.sendEmail({
+        to: newEmail,
+        subject: `Confirmação de Ingresso - Pedido ${orderNumber} - PD Castelo`,
+        body: emailNovoBody
+      });
+
+      Logger.log('Emails de notificação enviados');
+    } catch (emailError) {
+      Logger.log('Erro ao enviar emails:', emailError.toString());
+      // Não falha a operação se o email não for enviado
+    }
+
+    return {
+      success: true,
+      message: 'Ingresso atualizado com sucesso'
+    };
+
+  } catch (error) {
+    Logger.log('Erro ao atualizar ingresso:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
