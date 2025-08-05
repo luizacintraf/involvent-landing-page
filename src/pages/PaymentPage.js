@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { generatePixPayload } from '../utils/pixUtils';
 import { saveOrder } from '../utils/saveOrder';
+import CONFIG from '../config.js';
 
 export const PaymentPage = ({ 
   pedido = { 
@@ -16,7 +17,7 @@ export const PaymentPage = ({
   },
   onNavigate,
   onUpdateBuyer = () => {},
-  chavePix = "pedescalco.castelo@gmail.com",
+  chavePix = CONFIG.payment.pixEmail,
   nomeBeneficiario = "PE DESCALCO CASTELO",
   cidadeBeneficiario = "SAO PAULO"
 }) => {
@@ -132,7 +133,7 @@ export const PaymentPage = ({
               </div>
 
               <p className="text-sm text-gray-600 text-center">
-                Caso o QR code não funcione, faça o PIX para: eventospdcastelo@gmail.com
+                {CONFIG.payment.pixMessage}
               </p>
 
               <div className="text-center">
@@ -190,7 +191,7 @@ export const PaymentPage = ({
               className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent file:mr-3 sm:file:mr-4 file:py-1.5 sm:file:py-2 file:px-3 sm:file:px-4 file:rounded-full file:border-0 file:text-xs sm:file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
             />
             <p className="mt-2 text-sm font-semibold text-red-600">
-              ⚠️ ATENÇÃO: Sua compra só será efetivada após anexar o comprovante de pagamento.
+              {CONFIG.payment.comprovanteWarning}
             </p>
             <p className="mt-1 text-xs text-gray-600">
               O comprovante é necessário para validarmos seu pagamento e garantirmos seus ingressos.
