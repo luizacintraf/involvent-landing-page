@@ -1,4 +1,5 @@
 import React from 'react';
+import FreeWeekButton from './FreeWeekButton';
 
 const Benefits = ({ onTrialClick }) => {
   const benefits = [
@@ -81,12 +82,10 @@ const Benefits = ({ onTrialClick }) => {
         </div>
         
         <div style={{ textAlign: 'center', marginTop: '3rem' }}>
-          <button 
-            className="cta-button"
+          <FreeWeekButton 
             onClick={onTrialClick}
-          >
-            🎉 Quero minha aula experimental gratuita!
-          </button>
+            className="cta-button"
+          />
         </div>
       </div>
     </section>

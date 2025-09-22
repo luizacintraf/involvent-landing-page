@@ -28,12 +28,19 @@ const Testimonials = () => {
         <div className="testimonials-grid">
           {testimonials.map((testimonial, index) => (
             <div key={index} className="testimonial-card">
-              <div className="testimonial-content">
-                <p>{testimonial.depoiment}</p>
-              </div>
+              {testimonial.link && (
+                <div className="testimonial-video">
+                  <iframe
+                    src={testimonial.link}
+                    title={`Depoimento de ${testimonial.name}`}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  ></iframe>
+                </div>
+              )}
               <div className="testimonial-author">
                 <h4>{testimonial.name}</h4>
-                <p>{testimonial.function}</p>
               </div>
             </div>
           ))}

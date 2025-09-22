@@ -1,5 +1,6 @@
 import React from 'react';
 import backgroundImage from '../assets/background.jpeg';
+import FreeWeekButton from './FreeWeekButton';
 
 const Hero = ({ onTrialClick, onModalitiesClick }) => {
   return (
@@ -21,7 +22,7 @@ const Hero = ({ onTrialClick, onModalitiesClick }) => {
           Descubra a paixão pela dança conosco!
         </p>
         <div className="hero-buttons">
-          <button className="btn btn-primary" onClick={onTrialClick}>Aula Experimental Gratuita</button>
+          <FreeWeekButton onClick={onTrialClick} />
           <button className="btn btn-secondary" onClick={onModalitiesClick}>Conheça Nossas Modalidades</button>
         </div>
       </div>

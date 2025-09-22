@@ -4,36 +4,7 @@ import { useState, useEffect } from 'react';
 
 const Teachers = () => {
   
-  const [teachers, setTeachers] = useState([
-    {
-      name: 'Henrique Fabiano',
-      specialty: 'Ritmos Brasileiros',
-      description: 'Especialista em ritmos brasileiros com mais de 10 anos de experiência.',
-      photo: '👨‍🎵',
-      featured: true
-    },
-    {
-      name: 'Carolina Polezi',
-      specialty: 'Forró',
-      description: 'Professora especializada em forró tradicional e universitário.',
-      photo: '👩‍💃',
-      featured: true
-    },
-    {
-      name: 'Erika Souza',
-      specialty: 'Samba de Gafieira',
-      description: 'Especialista em samba de gafieira e ritmos brasileiros.',
-      photo: '👩‍🏫',
-      featured: false
-    },
-    {
-      name: 'Olvis Rodriguez',
-      specialty: 'Bachata e Salsa',
-      description: 'Bachata e Salsa direto de Cuba, preserva a cultura dos ritmos latinos.',
-      photo: '👨‍🎨',
-      featured: false
-    }
-  ]);
+  const [teachers, setTeachers] = useState([]);
   const [teacherImages, setTeacherImages] = useState({});
 
   useEffect(() => {
@@ -48,17 +19,17 @@ const Teachers = () => {
             .filter(teacher => teacher.photo_id || teacher.foto_id)
             .map(async (teacher) => {
               const fileId = teacher.photo_id || teacher.foto_id;
-              console.log(`Buscando imagem para ${teacher.name} com ID: ${fileId}`);
+             
               try {
                 const imageResponse = await API.getDriveImage(fileId);
-                console.log(`Resposta da imagem para ${teacher.name}:`, imageResponse);
+             
                 if (imageResponse.success) {
                   const base64Image = `data:${imageResponse.mimeType};base64,${imageResponse.data}`;
-                  console.log(`Imagem base64 criada para ${teacher.name}:`, base64Image.substring(0, 100) + '...');
+                  
                   return { teacherName: teacher.name, image: base64Image };
                 }
               } catch (error) {
-                console.log(`Erro ao carregar imagem do professor ${teacher.name}:`, error);
+                console.error(`Erro ao carregar imagem do professor ${teacher.name}:`, error);
               }
               return null;
             });
@@ -125,21 +96,6 @@ const Teachers = () => {
                     <p className="teacher-specialty">{teacher.specialty}</p>
                     <p>{teacher.descricao || teacher.description}</p>
                   </>
-                )}
-                
-                {(teacher.instagram || teacher.facebook) && (
-                  <div className="teacher-social">
-                    {teacher.instagram && (
-                      <a href={teacher.instagram} target="_blank" rel="noopener noreferrer">
-                        <i className="fab fa-instagram"></i>
-                      </a>
-                    )}
-                    {teacher.facebook && (
-                      <a href={teacher.facebook} target="_blank" rel="noopener noreferrer">
-                        <i className="fab fa-facebook"></i>
-                      </a>
-                    )}
-                  </div>
                 )}
               </div>
             );

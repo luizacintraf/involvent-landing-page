@@ -4,38 +4,7 @@ import { useState, useEffect } from 'react';
 
 const Classes = () => {
 
-  const [classes, setClasses] = useState([
-    {
-      title: 'Sertanejo Universitário',
-      description: 'Ritmo mais procurado nas baladas dançado com as músicas mais tocadas no país',
-      type: 'casal'
-    },
-    {
-      title: 'Sertanejo Vanera',
-      description: 'Dança abraçada, circular e fluida; lembra o forró, mas com identidade própria.',
-      type: 'casal'
-    },
-    {
-      title: 'Forró',
-      description: 'Ginga marcada, giros e passos simples; dançado colado, com energia nordestina.',
-      type: 'casal'
-    },
-    {
-      title: 'Samba de Gafieira',
-      description: 'Sofisticado, malandro e elegante; mistura samba com passos de salão.',
-      type: 'casal'
-    },
-    {
-      title: 'Bachata',
-      description: 'Estilo dominicano, marcado pelo quadril; romântico e envolvente.',
-      type: 'casal'
-    },
-    {
-      title: 'Zouk',
-      description: 'Fluido, com movimentos de ondas e cabeças soltas; sensual e musical.',
-      type: 'casal'
-    }
-  ]);
+  const [classes, setClasses] = useState([]);
 
   useEffect(() => {
     const fetchClasses = async () => {
@@ -45,7 +14,7 @@ const Classes = () => {
           setClasses(response.data);
         }
       } catch (error) {
-        console.log('Usando dados de fallback para classes');
+        console.error('Erro ao carregar classes:', error);
       }
     };
     fetchClasses();

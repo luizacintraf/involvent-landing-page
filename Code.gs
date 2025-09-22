@@ -1147,8 +1147,37 @@ function getNextDateForDay(dayName) {
 
 function saveExperimentalEnrollment(enrollmentData) {
   try {
+    // Obter dados da semana gratuita para determinar o tipo de semana
+    const freeWeekResponse = getFreeWeekData();
+    console.log('freeWeekResponse:', freeWeekResponse);
+    const isFreeWeek = freeWeekResponse.success && freeWeekResponse.data.isNearFreeWeek;
+    console.log('isFreeWeek:', isFreeWeek);
+    
+    // Calcular datas baseadas no tipo de semana
+    let semanaInfo = '';
+    if (isFreeWeek) {
+      // Semana gratuita - usar datas da planilha
+      semanaInfo = `${freeWeekResponse.data.inicio} a ${freeWeekResponse.data.fim}`;
+      console.log('Semana gratuita - semanaInfo:', semanaInfo);
+    } else {
+      // Semana experimental - próxima segunda-feira
+      const hoje = new Date();
+      const proximaSegunda = new Date(hoje);
+      proximaSegunda.setDate(hoje.getDate() + (1 + 7 - hoje.getDay()) % 7); // Próxima segunda
+      
+      const fimSemana = new Date(proximaSegunda);
+      fimSemana.setDate(proximaSegunda.getDate() + 4); // Sexta-feira
+      
+      semanaInfo = `${proximaSegunda.toLocaleDateString('pt-BR')} a ${fimSemana.toLocaleDateString('pt-BR')}`;
+      console.log('Semana experimental - semanaInfo:', semanaInfo);
+    }
+    
+    console.log('Final semanaInfo:', semanaInfo);
+    
     // Criar uma linha para cada aula inscrita
     const rowsToSave = [];
+    
+    const tipoSemana = isFreeWeek ? 'Semana Presencial Gratuita' : 'Semana Experimental';
     
     if (enrollmentData.aulas_inscritas && enrollmentData.aulas_inscritas.length > 0) {
       enrollmentData.aulas_inscritas.forEach(aula => {
@@ -1162,8 +1191,10 @@ function saveExperimentalEnrollment(enrollmentData) {
           dia: aula.dia,
           horario: aula.horario,
           professor: aula.professor,
-          nivel: aula.nivel,
-          data: aula.data,
+          nivel: aula.nivel || enrollmentData.nivel_experiencia, // Usar nível da aula ou do enrollment
+          data: aula.data || semanaInfo, // Usar data da aula ou período da semana
+          week: tipoSemana,
+          periodo: semanaInfo,
           data_inscricao: new Date().toLocaleDateString('pt-BR')
         });
       });
@@ -1174,38 +1205,39 @@ function saveExperimentalEnrollment(enrollmentData) {
         email: enrollmentData.email,
         telefone: enrollmentData.telefone,
         nivel_experiencia: enrollmentData.nivel_experiencia,
-        quantidade_aulas: enrollmentData.quantidade_aulas,
-        modalidade: '',
+        quantidade_aulas: tipoSemana,
+        modalidade: enrollmentData.modalidade || '',
         dia: '',
         horario: '',
         professor: '',
-        nivel: '',
-        data: '',
+        nivel: enrollmentData.nivel_experiencia, // Salvar o nível aqui também
+        data: semanaInfo, // Salvar o período da semana aqui
+        week: tipoSemana,
+        periodo: semanaInfo,
         data_inscricao: new Date().toLocaleDateString('pt-BR')
       });
     }
     
     const result = appendRows('experimental', rowsToSave);
     
-    // Formatar aulas inscritas para o email
-    const aulasFormatadas = enrollmentData.aulas_inscritas ? 
-      enrollmentData.aulas_inscritas.map(aula => 
-        `• ${aula.modalidade} - ${aula.dia} às ${aula.horario} (Prof. ${aula.professor})`
-      ).join('\n') : 
-      'Nenhuma aula específica selecionada';
+    // Formatar modalidades para o email
+    const modalidadesFormatadas = enrollmentData.modalidade ? 
+      `Modalidades de interesse: ${enrollmentData.modalidade}` : 
+      'Nenhuma modalidade específica selecionada';
     
     // Enviar email de notificação
+    console.log('Enviando email - tipoSemana:', tipoSemana, 'semanaInfo:', semanaInfo);
     const emailBody = `
-Nova inscrição para aula experimental!
+Nova inscrição para ${tipoSemana}!
 
 Nome: ${enrollmentData.nome}
 Email: ${enrollmentData.email}
 Telefone: ${enrollmentData.telefone}
 Nível de experiência: ${enrollmentData.nivel_experiencia}
-Quantidade de aulas: ${enrollmentData.quantidade_aulas}
 
-Aulas inscritas:
-${aulasFormatadas}
+${modalidadesFormatadas}
+
+Período: ${semanaInfo}
 
 Data da inscrição: ${new Date().toLocaleDateString('pt-BR')}
     `;
@@ -1213,23 +1245,26 @@ Data da inscrição: ${new Date().toLocaleDateString('pt-BR')}
     try {
       // Email para a escola
       MailApp.sendEmail({
-        to: 'contato@involvent.com.br', // Substitua pelo email da escola
-        subject: 'Nova inscrição - Aula Experimental',
+        to: 'contato.involvent@gmail.com.br',
+        subject: `Nova inscrição - ${tipoSemana}`,
         body: emailBody
       });
       
       // Email de confirmação para o aluno
+      const whatsappLink = isFreeWeek ? freeWeekResponse.data.wppLink : 'https://wa.me/5519998882451';
       const studentEmailBody = `
 Olá ${enrollmentData.nome}!
 
-Obrigado por se inscrever na aula experimental da Involvent! 🎉
+Obrigado por se inscrever na ${tipoSemana} da Involvent! 🎉
 
 Detalhes da sua inscrição:
-• Quantidade de aulas: ${enrollmentData.quantidade_aulas}
 • Nível de experiência: ${enrollmentData.nivel_experiencia}
+• ${modalidadesFormatadas}
+• Período: ${semanaInfo}
 
-Suas aulas experimentais:
-${aulasFormatadas}
+📱 ENTRE NO NOSSO GRUPO EXCLUSIVO!
+Faça parte da nossa comunidade e receba todas as novidades:
+${whatsappLink}
 
 Entraremos em contato em breve para confirmar sua presença e fornecer mais detalhes sobre as aulas.
 
@@ -1245,7 +1280,7 @@ Equipe Involvent - Escola de Dança
       
       MailApp.sendEmail({
         to: enrollmentData.email,
-        subject: 'Confirmação de Inscrição - Aula Experimental Involvent',
+        subject: `Confirmação de Inscrição - ${tipoSemana} Involvent`,
         body: studentEmailBody
       });
       
@@ -1326,5 +1361,268 @@ function getDriveImage(fileId) {
       success: false,
       error: error.toString()
     };
+  }
+}
+
+// Função para salvar dados de contato
+function saveContactData(contactData) {
+  try {
+    const rowToSave = {
+      nome: contactData.nome,
+      email: contactData.email,
+      telefone: contactData.telefone,
+      mensagem: contactData.mensagem,
+      data: contactData.data
+    };
+    
+    const result = appendRows('contact', [rowToSave]);
+    
+    // Enviar email de notificação
+    const emailBody = `
+Nova mensagem de contato via WhatsApp!
+
+Nome: ${contactData.nome}
+Email: ${contactData.email}
+Telefone: ${contactData.telefone}
+
+Mensagem:
+${contactData.mensagem}
+
+Data do contato: ${contactData.data}
+    `;
+    
+    try {
+      MailApp.sendEmail({
+        to: 'contato@involvent.com.br',
+        subject: 'Nova mensagem de contato via WhatsApp - Site Involvent',
+        body: emailBody
+      });
+    } catch (emailError) {
+      Logger.log('Erro ao enviar email de contato:', emailError);
+    }
+    
+    return { success: true, message: 'Dados salvos com sucesso!' };
+  } catch (error) {
+    console.error('Erro ao salvar contato:', error);
+    return { success: false, error: error.toString() };
+  }
+}
+
+// Função de teste para verificar a aba free_week_planning
+function testFreeWeekSheet() {
+  try {
+    let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('free_week_planning');
+    
+    if (!sheet) {
+      console.log('Aba free_week_planning não encontrada, criando...');
+      // Criar a aba automaticamente
+      sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet('free_week_planning');
+      
+      // Adicionar cabeçalhos
+      sheet.getRange(1, 1, 1, 4).setValues([['Periodo', 'Inicio', 'Fim', 'wppLink']]);
+      
+      // Adicionar dados de exemplo (4o Trimestre)
+      sheet.getRange(2, 1, 1, 4).setValues([['4o Trimestre', '29/09/2024', '04/10/2024', 'https://chat.whatsapp.com/E5L2HLzzDj19UzmrLsfYYm?mode=ems_copy_t']]);
+      
+      console.log('Aba free_week_planning criada com sucesso');
+    }
+
+    const data = sheet.getDataRange().getValues();
+    console.log('Dados da aba free_week_planning:', data);
+    
+    return {
+      success: true,
+      data: data,
+      rowCount: data.length
+    };
+  } catch (error) {
+    console.error('Erro ao testar/criar aba:', error);
+    return { success: false, error: error.toString() };
+  }
+}
+
+// Função para obter dados da semana gratuita
+function getFreeWeekData() {
+  try {
+    let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('free_week_planning');
+    
+    if (!sheet) {
+      console.log('Aba free_week_planning não encontrada, criando...');
+      // Criar a aba automaticamente
+      sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet('free_week_planning');
+      
+      // Adicionar cabeçalhos
+      sheet.getRange(1, 1, 1, 4).setValues([['Periodo', 'Inicio', 'Fim', 'wppLink']]);
+      
+      // Adicionar dados de exemplo (4o Trimestre)
+      sheet.getRange(2, 1, 1, 4).setValues([['4o Trimestre', '29/09/2024', '04/10/2024', 'https://chat.whatsapp.com/E5L2HLzzDj19UzmrLsfYYm?mode=ems_copy_t']]);
+      
+      console.log('Aba free_week_planning criada com sucesso');
+    }
+
+    const data = sheet.getDataRange().getValues();
+    if (data.length <= 1) {
+      return { success: false, error: 'Nenhum dado encontrado' };
+    }
+
+    // Pega a primeira linha de dados (ignorando cabeçalho)
+    const row = data[1];
+    
+    // Verificar se a linha tem dados suficientes
+    if (!row || row.length < 4) {
+      console.error('Linha de dados incompleta:', row);
+      return { success: false, error: 'Dados da semana gratuita incompletos' };
+    }
+    
+    const periodo = row[0] || '';
+    let inicio = row[1] || '';
+    let fim = row[2] || '';
+    const wppLink = row[3] || 'https://wa.me/5519998882451';
+    
+    // Converter para string se necessário
+    if (inicio && typeof inicio !== 'string') {
+      console.log('Convertendo inicio para string:', inicio, 'tipo:', typeof inicio);
+      inicio = String(inicio);
+    }
+    
+    if (fim && typeof fim !== 'string') {
+      console.log('Convertendo fim para string:', fim, 'tipo:', typeof fim);
+      fim = String(fim);
+    }
+    
+    console.log('Dados extraídos:', { periodo, inicio, fim, wppLink });
+
+    // Converter datas para verificar proximidade
+    const hoje = new Date();
+    
+    // Converter formato DD/MM/YYYY para Date
+    const parseDate = (dateStr) => {
+      console.log('parseDate recebeu:', dateStr, 'tipo:', typeof dateStr);
+      
+      // Verificar se é uma string válida
+      if (!dateStr || typeof dateStr !== 'string') {
+        console.error('Data inválida (não é string):', dateStr, 'tipo:', typeof dateStr);
+        return new Date(); // Retorna data atual como fallback
+      }
+      
+      // Verificar se tem o formato correto
+      if (!dateStr.includes('/')) {
+        console.error('Formato de data inválido (sem /):', dateStr);
+        return new Date(); // Retorna data atual como fallback
+      }
+      
+      try {
+        const parts = dateStr.split('/');
+        console.log('Parts após split:', parts);
+        
+        if (parts.length !== 3) {
+          console.error('Data deve ter formato DD/MM/YYYY:', dateStr, 'parts:', parts);
+          return new Date(); // Retorna data atual como fallback
+        }
+        
+        const [day, month, year] = parts;
+        const result = new Date(year, month - 1, day); // month é 0-indexed
+        console.log('Data parseada:', result);
+        return result;
+      } catch (error) {
+        console.error('Erro ao fazer split:', error, 'dateStr:', dateStr);
+        return new Date(); // Retorna data atual como fallback
+      }
+    };
+    
+    const dataInicio = parseDate(inicio);
+    const dataFim = parseDate(fim);
+    
+    // Verificar se as datas são válidas
+    if (isNaN(dataInicio.getTime()) || isNaN(dataFim.getTime())) {
+      console.error('Datas inválidas após parsing:', { inicio, fim, dataInicio, dataFim });
+      
+      // Se as datas são inválidas, usar dados padrão para 4o trimestre
+      console.log('Usando dados padrão para 4o trimestre');
+      const hoje = new Date();
+      const dataInicioPadrao = new Date(2024, 8, 29); // 29/09/2024
+      const dataFimPadrao = new Date(2024, 9, 4); // 04/10/2024
+      
+      const diasParaInicio = Math.ceil((dataInicioPadrao - hoje) / (1000 * 60 * 60 * 24));
+      const diasParaFim = Math.ceil((dataFimPadrao - hoje) / (1000 * 60 * 60 * 24));
+      
+      const isNearFreeWeek = (diasParaInicio >= 0 && diasParaInicio <= 30) || (diasParaInicio <= 0 && diasParaFim >= 0);
+      
+      return {
+        success: true,
+        data: {
+          periodo: '4o Trimestre',
+          inicio: '29/09/2024',
+          fim: '04/10/2024',
+          wppLink: 'https://chat.whatsapp.com/E5L2HLzzDj19UzmrLsfYYm?mode=ems_copy_t',
+          isNearFreeWeek,
+          diasParaInicio,
+          diasParaFim,
+          isActive: diasParaInicio <= 0 && diasParaFim >= 0,
+          isUpcoming: diasParaInicio > 0 && diasParaInicio <= 30
+        }
+      };
+    }
+    
+    // Calcular diferença em dias
+    const diasParaInicio = Math.ceil((dataInicio - hoje) / (1000 * 60 * 60 * 24));
+    const diasParaFim = Math.ceil((dataFim - hoje) / (1000 * 60 * 60 * 24));
+    
+    // Log para debug
+    console.log('Debug Free Week:', {
+      hoje: hoje.toLocaleDateString('pt-BR'),
+      inicio: inicio,
+      fim: fim,
+      dataInicio: dataInicio.toLocaleDateString('pt-BR'),
+      dataFim: dataFim.toLocaleDateString('pt-BR'),
+      diasParaInicio,
+      diasParaFim
+    });
+    
+    // Verificar se está dentro de 1 mês antes do início OU se já começou e ainda não terminou
+    const isNearFreeWeek = (diasParaInicio >= 0 && diasParaInicio <= 30) || (diasParaInicio <= 0 && diasParaFim >= 0);
+
+    // Formatar datas para DD/MM/YYYY
+    const formatDate = (dateStr) => {
+      if (!dateStr) return '';
+      
+      // Se já é uma string no formato DD/MM/YYYY, retorna como está
+      if (typeof dateStr === 'string' && dateStr.includes('/') && dateStr.length <= 10) {
+        return dateStr;
+      }
+      
+      // Se é um objeto Date ou string de data, converte
+      try {
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return '';
+        
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        
+        return `${day}/${month}/${year}`;
+      } catch (error) {
+        console.error('Erro ao formatar data:', error, 'dateStr:', dateStr);
+        return '';
+      }
+    };
+
+    return {
+      success: true,
+      data: {
+        periodo: String(periodo),
+        inicio: formatDate(inicio),
+        fim: formatDate(fim),
+        wppLink: String(wppLink),
+        isNearFreeWeek,
+        diasParaInicio,
+        diasParaFim,
+        isActive: diasParaInicio <= 0 && diasParaFim >= 0, // Se a semana já começou e ainda não terminou
+        isUpcoming: diasParaInicio > 0 && diasParaInicio <= 30 // Se está chegando (até 30 dias antes)
+      }
+    };
+  } catch (error) {
+    console.error('Erro ao obter dados da semana gratuita:', error);
+    return { success: false, error: error.toString() };
   }
 }

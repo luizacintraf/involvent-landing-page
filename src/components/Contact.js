@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import API from '../utils/gasClient';
+import FreeWeekButton from './FreeWeekButton';
 
 const Contact = ({ onTrialClick }) => {
   const [formData, setFormData] = useState({
@@ -24,7 +26,6 @@ const Contact = ({ onTrialClick }) => {
     try {
       // Simular envio
       await new Promise(resolve => setTimeout(resolve, 1000));
-      alert('Mensagem enviada com sucesso!');
       
       // Limpar formulário
       setFormData({
@@ -36,6 +37,55 @@ const Contact = ({ onTrialClick }) => {
     } catch (error) {
       console.error('Erro:', error);
       alert('Erro ao enviar mensagem. Tente novamente.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleWhatsappClick = async () => {
+    setIsSubmitting(true);
+    
+    try {
+      // Salvar na planilha primeiro
+      const contactData = {
+        nome: formData.name,
+        email: formData.email,
+        telefone: formData.phone,
+        mensagem: formData.message,
+        data: new Date().toLocaleString('pt-BR')
+      };
+
+      await API.appendRows('contact', [contactData]);
+
+      // Criar mensagem formatada
+      const message = `Olá! Meu nome é ${formData.name}.
+
+      Email: ${formData.email}
+      Telefone: ${formData.phone}
+
+      Mensagem:
+      ${formData.message}`;
+
+      let formattedMessage = encodeURIComponent(message);
+    
+      // Montar link do WhatsApp
+      const whatsappUrl = "https://wa.me/5519998882451?text="+formattedMessage;
+      
+      // Abrir WhatsApp
+      window.open(whatsappUrl, '_blank');
+
+      // Limpar formulário
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        message: ''
+      });
+
+      
+    } catch (error) {
+      console.error('Erro ao salvar:', error);
+      alert('Erro ao salvar dados. Tente novamente.');
     } finally {
       setIsSubmitting(false);
     }
@@ -58,7 +108,7 @@ const Contact = ({ onTrialClick }) => {
             
             <div className="contact-item">
               <h3>📞 Telefone</h3>
-              <p>(19) 99999-9999</p>
+              <p>(19) 99888-2451</p>
             </div>
             
             <div className="contact-item">
@@ -123,21 +173,23 @@ const Contact = ({ onTrialClick }) => {
             </div>
 
             <button 
-              type="submit" 
+              type="button" 
               className="btn btn-primary"
+              onClick={handleWhatsappClick}
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Enviando...' : 'Enviar Mensagem'}
+              {isSubmitting ? '⏳ Salvando...' : 'Enviar Mensagem'}
             </button>
           </form>
         </div>
 
         <div className="cta-section">
           <h3>Pronto para começar sua jornada na dança?</h3>
-          <p>Agende sua aula experimental gratuita e descubra o prazer de dançar!</p>
-          <button className="btn btn-secondary" onClick={onTrialClick}>
-            Aula Experimental Gratuita
-          </button>
+          <p>Agende sua semana experimental e descubra o prazer de dançar!</p>
+          <FreeWeekButton 
+            onClick={onTrialClick}
+            className="btn btn-secondary"
+          />
         </div>
       </div>
     </section>

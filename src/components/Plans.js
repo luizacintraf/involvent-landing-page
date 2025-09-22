@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import API from '../utils/gasClient';
+import FreeWeekButton from './FreeWeekButton';
 
 const Plans = ({ onTrialClick }) => {
   const [plans, setPlans] = useState([]);
@@ -11,57 +12,7 @@ const Plans = ({ onTrialClick }) => {
         const response = await API.getSpreadsheetData('plans');
         if (response.data && response.data.length > 0) {
           setPlans(response.data);
-        } else {
-          // Dados de fallback
-          setPlans([
-            {
-              Plan: 'Premium',
-              Frequency: 'Recorrente',
-              Price: 'R$ 239,90',
-              advantages: 'Todas as modalidades',
-              description: 'No plano Premium você faz todas as modalidades que quiser*! Pode fazer várias aulas por dia, todos os dias :)'
-            },
-            {
-              Plan: 'Premium',
-              Frequency: 'Mensal',
-              Price: 'R$ 319,90',
-              advantages: 'Todas as modalidades',
-              description: 'No plano Premium você faz todas as modalidades que quiser*! Pode fazer várias aulas por dia, todos os dias :)'
-            },
-            {
-              Plan: 'Básico',
-              Frequency: 'Recorrente',
-              Price: 'R$ 145,00',
-              advantages: '01 MODALIDADE',
-              description: 'No plano Básico você pode fazer 1 modalidade, 1 vez por semana'
-            },
-            {
-              Plan: 'Básico',
-              Frequency: 'Mensal',
-              Price: 'R$ 169,90',
-              advantages: '01 MODALIDADE',
-              description: 'No plano Básico você pode fazer 1 modalidade, 1 vez por semana'
-            }
-          ]);
         }
-      } catch (error) {
-        console.log('Erro ao carregar planos, usando dados de fallback');
-        setPlans([
-          {
-            Plan: 'Premium',
-            Frequency: 'Recorrente',
-            Price: 'R$ 239,90',
-            advantages: 'Todas as modalidades',
-            description: 'No plano Premium você faz todas as modalidades que quiser*! Pode fazer várias aulas por dia, todos os dias :)'
-          },
-          {
-            Plan: 'Básico',
-            Frequency: 'Recorrente',
-            Price: 'R$ 145,00',
-            advantages: '01 MODALIDADE',
-            description: 'No plano Básico você pode fazer 1 modalidade, 1 vez por semana'
-          }
-        ]);
       } finally {
         setLoading(false);
       }
@@ -137,24 +88,15 @@ const Plans = ({ onTrialClick }) => {
               </div>
               
               <div className="plan-actions">
-                <button 
-                  className="cta-button"
+                <FreeWeekButton 
                   onClick={onTrialClick}
-                >
-                  🎉 Aula Experimental Gratuita
-                </button>
-                <button className="btn btn-secondary">
-                  Quero este plano
-                </button>
+                  className="cta-button"
+                />
               </div>
             </div>
           ))}
         </div>
         
-        <div className="plans-footer">
-          <p>💡 <strong>Dica:</strong> Comece com a aula experimental gratuita para conhecer nossa metodologia!</p>
-          <p>📞 Dúvidas? Entre em contato: (19) 99888-2451</p>
-        </div>
       </div>
     </section>
   );

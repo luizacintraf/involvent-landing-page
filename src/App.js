@@ -13,31 +13,34 @@ import Contact from './components/Contact';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 import TrialClassForm from './components/TrialClassForm';
+import { FreeWeekProvider } from './contexts/FreeWeekContext';
 
 function App() {
   const [showTrialForm, setShowTrialForm] = useState(false);
 
   return (
-    <div className="App">
-      <Header />
-      <main>
-        <Hero onTrialClick={() => setShowTrialForm(true)} />
-        <Benefits onTrialClick={() => setShowTrialForm(true)} />
-        <About onTrialClick={() => setShowTrialForm(true)} />
-        <Classes onTrialClick={() => setShowTrialForm(true)} />
-        <Teachers />
-        <Testimonials onTrialClick={() => setShowTrialForm(true)} />
-        <Plans onTrialClick={() => setShowTrialForm(true)} />
-        <FAQ />
-        <Contact onTrialClick={() => setShowTrialForm(true)} />
-      </main>
-      <Footer />
-      <ScrollToTop />
-      <TrialClassForm 
-        isOpen={showTrialForm} 
-        onClose={() => setShowTrialForm(false)} 
-      />
-    </div>
+    <FreeWeekProvider>
+      <div className="App">
+        <Header />
+        <main>
+          <Hero onTrialClick={() => setShowTrialForm(true)} />
+          <Benefits onTrialClick={() => setShowTrialForm(true)} />
+          <About onTrialClick={() => setShowTrialForm(true)} />
+          <Classes onTrialClick={() => setShowTrialForm(true)} />
+          <Teachers />
+          <Testimonials onTrialClick={() => setShowTrialForm(true)} />
+          <Plans onTrialClick={() => setShowTrialForm(true)} />
+          <FAQ />
+          <Contact onTrialClick={() => setShowTrialForm(true)} />
+        </main>
+        <Footer />
+        <ScrollToTop />
+        <TrialClassForm 
+          isOpen={showTrialForm} 
+          onClose={() => setShowTrialForm(false)} 
+        />
+      </div>
+    </FreeWeekProvider>
   );
 }
 
