@@ -8,7 +8,7 @@ function doGet(e) {
   
   // Retorna a aplicação normal
   return HtmlService.createHtmlOutputFromFile('index')
-    .setTitle('3ª Festa Julina PD Castelo')
+    .setTitle('Involvent - Escola de Dança')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
@@ -215,12 +215,12 @@ function sendConfirmationEmail(data) {
     const htmlBody = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <h1 style="color: #4a5568; text-align: center; margin-bottom: 30px;">
-          Confirmação de Compra - Festa Julina PD Castelo
+          Confirmação de Compra - Involvent
         </h1>
         
         <div style="background-color: #f7fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
           <p style="margin-bottom: 10px;">Olá <strong>${pedido.dadosComprador.nome}</strong>,</p>
-          <p style="margin-bottom: 20px;">Obrigado por comprar seus ingressos para a 3ª Festa Julina do PD Castelo!</p>
+          <p style="margin-bottom: 20px;">Obrigado por comprar seus ingressos!</p>
           
           <div style="background-color: #ebf8ff; border: 1px solid #bee3f8; border-radius: 4px; padding: 10px; margin-bottom: 20px;">
             <p style="margin: 0; color: #2b6cb0;"><strong>Número do Pedido:</strong> ${orderId}</p>
@@ -263,7 +263,7 @@ function sendConfirmationEmail(data) {
           <p>Em caso de dúvidas, entre em contato conosco.</p>
           <p style="margin-top: 20px;">
             Atenciosamente,<br>
-            <strong>Equipe PD Castelo</strong>
+            <strong>Equipe Involvent</strong>
           </p>
         </div>
       </div>
@@ -272,11 +272,11 @@ function sendConfirmationEmail(data) {
 
     // Prepara o texto plano
     const plainText = `
-        Confirmação de Compra - Festa Julina PD Castelo
+        Confirmação de Compra - Involvent
         
         Olá ${pedido.dadosComprador.nome},
         
-        Obrigado por comprar seus ingressos para a 3ª Festa Julina do PD Castelo!
+        Obrigado por comprar seus ingressos!
         
         Número do Pedido: ${orderId}
         
@@ -298,7 +298,7 @@ function sendConfirmationEmail(data) {
         Em caso de dúvidas, entre em contato conosco.
         
         Atenciosamente,
-        Equipe PD Castelo
+        Equipe Involvent
     `;
     Logger.log('Texto plano do email gerado');
 
@@ -307,7 +307,7 @@ function sendConfirmationEmail(data) {
       Logger.log('Tentando enviar email para:', to);
       MailApp.sendEmail({
         to: to,
-        subject: `Confirmação de Compra - Festa Julina PD Castelo - Pedido ${orderId}`,
+        subject: `Confirmação de Compra - Pedido ${orderId}`,
         htmlBody: htmlBody,
         body: plainText
       });
@@ -576,7 +576,7 @@ function requestEditToken(params) {
       Se você não solicitou esta alteração, por favor ignore este email.
       
       Atenciosamente,
-      Equipe PD Castelo
+      Equipe Involvent
     `;
 
     MailApp.sendEmail({
@@ -1060,12 +1060,12 @@ function updateTicket(params) {
         Se você não solicitou esta alteração, entre em contato conosco imediatamente.
         
         Atenciosamente,
-        Equipe PD Castelo
+        Equipe Involvent
       `;
 
       MailApp.sendEmail({
         to: oldEmail,
-        subject: `Alteração no Pedido ${orderNumber} - PD Castelo`,
+        subject: `Alteração no Pedido ${orderNumber} - Involvent`,
         body: emailAntigoBody
       });
 
@@ -1084,12 +1084,12 @@ function updateTicket(params) {
         Guarde este número de pedido para apresentar no dia do evento.
         
         Atenciosamente,
-        Equipe PD Castelo
+        Equipe Involvent
       `;
 
       MailApp.sendEmail({
         to: newEmail,
-        subject: `Confirmação de Ingresso - Pedido ${orderNumber} - PD Castelo`,
+        subject: `Confirmação de Ingresso - Pedido ${orderNumber} - Involvent`,
         body: emailNovoBody
       });
 
@@ -1109,6 +1109,222 @@ function updateTicket(params) {
     return {
       success: false,
       error: error.message
+    };
+  }
+}
+
+// Funções para a landing page da Involvent
+function getScheduleData() {
+  return getSpreadsheetData('schedule');
+}
+
+function getNextDateForDay(dayName) {
+  const today = new Date();
+  const dayMap = {
+    'Segunda': 1,
+    'Terça': 2,
+    'Quarta': 3,
+    'Quinta': 4,
+    'Sexta': 5,
+    'Sábado': 6,
+    'Domingo': 0
+  };
+  
+  const targetDay = dayMap[dayName];
+  if (targetDay === undefined) return '';
+  
+  const daysUntilTarget = (targetDay - today.getDay() + 7) % 7;
+  const nextDate = new Date(today);
+  nextDate.setDate(today.getDate() + (daysUntilTarget === 0 ? 7 : daysUntilTarget));
+  
+  return nextDate.toLocaleDateString('pt-BR', {
+    weekday: 'long',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
+}
+
+function saveExperimentalEnrollment(enrollmentData) {
+  try {
+    // Criar uma linha para cada aula inscrita
+    const rowsToSave = [];
+    
+    if (enrollmentData.aulas_inscritas && enrollmentData.aulas_inscritas.length > 0) {
+      enrollmentData.aulas_inscritas.forEach(aula => {
+        rowsToSave.push({
+          nome: enrollmentData.nome,
+          email: enrollmentData.email,
+          telefone: enrollmentData.telefone,
+          nivel_experiencia: enrollmentData.nivel_experiencia,
+          quantidade_aulas: enrollmentData.quantidade_aulas,
+          modalidade: aula.modalidade,
+          dia: aula.dia,
+          horario: aula.horario,
+          professor: aula.professor,
+          nivel: aula.nivel,
+          data: aula.data,
+          data_inscricao: new Date().toLocaleDateString('pt-BR')
+        });
+      });
+    } else {
+      // Se não há aulas específicas, salva apenas os dados básicos
+      rowsToSave.push({
+        nome: enrollmentData.nome,
+        email: enrollmentData.email,
+        telefone: enrollmentData.telefone,
+        nivel_experiencia: enrollmentData.nivel_experiencia,
+        quantidade_aulas: enrollmentData.quantidade_aulas,
+        modalidade: '',
+        dia: '',
+        horario: '',
+        professor: '',
+        nivel: '',
+        data: '',
+        data_inscricao: new Date().toLocaleDateString('pt-BR')
+      });
+    }
+    
+    const result = appendRows('experimental', rowsToSave);
+    
+    // Formatar aulas inscritas para o email
+    const aulasFormatadas = enrollmentData.aulas_inscritas ? 
+      enrollmentData.aulas_inscritas.map(aula => 
+        `• ${aula.modalidade} - ${aula.dia} às ${aula.horario} (Prof. ${aula.professor})`
+      ).join('\n') : 
+      'Nenhuma aula específica selecionada';
+    
+    // Enviar email de notificação
+    const emailBody = `
+Nova inscrição para aula experimental!
+
+Nome: ${enrollmentData.nome}
+Email: ${enrollmentData.email}
+Telefone: ${enrollmentData.telefone}
+Nível de experiência: ${enrollmentData.nivel_experiencia}
+Quantidade de aulas: ${enrollmentData.quantidade_aulas}
+
+Aulas inscritas:
+${aulasFormatadas}
+
+Data da inscrição: ${new Date().toLocaleDateString('pt-BR')}
+    `;
+    
+    try {
+      // Email para a escola
+      MailApp.sendEmail({
+        to: 'contato@involvent.com.br', // Substitua pelo email da escola
+        subject: 'Nova inscrição - Aula Experimental',
+        body: emailBody
+      });
+      
+      // Email de confirmação para o aluno
+      const studentEmailBody = `
+Olá ${enrollmentData.nome}!
+
+Obrigado por se inscrever na aula experimental da Involvent! 🎉
+
+Detalhes da sua inscrição:
+• Quantidade de aulas: ${enrollmentData.quantidade_aulas}
+• Nível de experiência: ${enrollmentData.nivel_experiencia}
+
+Suas aulas experimentais:
+${aulasFormatadas}
+
+Entraremos em contato em breve para confirmar sua presença e fornecer mais detalhes sobre as aulas.
+
+Localização:
+Rua Dr. Antônio Castro Prado, 135
+Taquaral, Campinas - SP
+
+WhatsApp: (19) 99888-2451
+
+Atenciosamente,
+Equipe Involvent - Escola de Dança
+      `;
+      
+      MailApp.sendEmail({
+        to: enrollmentData.email,
+        subject: 'Confirmação de Inscrição - Aula Experimental Involvent',
+        body: studentEmailBody
+      });
+      
+    } catch (emailError) {
+      Logger.log('Erro ao enviar email:', emailError);
+    }
+    
+    return { success: true, message: 'Inscrição realizada com sucesso!' };
+  } catch (error) {
+    console.error('Erro ao salvar inscrição:', error);
+    return { success: false, error: error.toString() };
+  }
+}
+
+function saveContactForm(contactData) {
+  try {
+    const rowToSave = {
+      nome: contactData.name,
+      email: contactData.email,
+      telefone: contactData.phone,
+      interesse: contactData.interest,
+      mensagem: contactData.message,
+      data_contato: new Date().toLocaleDateString('pt-BR'),
+      hora_contato: new Date().toLocaleTimeString('pt-BR')
+    };
+    
+    const result = appendRows('contact', [rowToSave]);
+    
+    // Enviar email de notificação
+    const emailBody = `
+Nova mensagem de contato!
+
+Nome: ${contactData.name}
+Email: ${contactData.email}
+Telefone: ${contactData.phone}
+Interesse: ${contactData.interest}
+
+Mensagem:
+${contactData.message}
+
+Data do contato: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}
+    `;
+    
+    try {
+      MailApp.sendEmail({
+        to: 'contato@involvent.com.br',
+        subject: 'Nova mensagem de contato - Site Involvent',
+        body: emailBody
+      });
+    } catch (emailError) {
+      Logger.log('Erro ao enviar email de contato:', emailError);
+    }
+    
+    return { success: true, message: 'Mensagem enviada com sucesso!' };
+  } catch (error) {
+    console.error('Erro ao salvar contato:', error);
+    return { success: false, error: error.toString() };
+  }
+}
+
+// Função para servir imagens do Google Drive
+function getDriveImage(fileId) {
+  try {
+    const file = DriveApp.getFileById(fileId);
+    const blob = file.getBlob();
+    
+    // Converte para base64 corretamente
+    const base64Data = Utilities.base64Encode(blob.getBytes());
+    
+    return {
+      success: true,
+      data: base64Data,
+      mimeType: blob.getContentType()
+    };
+  } catch (error) {
+    Logger.log('Erro ao carregar imagem:', error);
+    return {
+      success: false,
+      error: error.toString()
     };
   }
 }

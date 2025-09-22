@@ -6,50 +6,31 @@
 const CONFIG = {
   // Informações básicas do evento
   eventInfo: {
-    title: "3° Arraiá do PD Castelo",
-    subtitle: "🌽💚🔥IRRÁAAAAAAA olha o 3° Arraiá do PD Castelo!🔥💚🌽",
-    date: "06 de Julho de 2025",
-    time: "14:00h às 19:00h",
-    location: "PD Castelo"
+    title: "St. Patrick's Day",
+    subtitle: "PD CASTELO",
+    date: "16 de Agosto",
+    time: "17:00h",
+    location: "PD Castelo",
+    address: "Rua Romualdo Lopes Cançado, 343 – 3º andar, Bairro Castelo"
   },
   // Descrição completa do evento
   eventDescription: {
-    intro: "Chegou o melhor período do ano, nossa escola de forró se enche de alegria com a nossa maravilhosa confraternização de alunos com o tema JULHINO! 🙌🏻💃🏻🕺🏽",
+    intro: "3 HORAS DE ESPAÇO LIVRE ESTENDIDO COM MUITO XEQUE MATE, VENHA DE VERDE!",
     cards:[
       {
-        title:"Comidas",
+        title: "Informações Gerais",
         items:[
-          "Caldo de Mandioca",
-          "Caldo de Feijão", 
-          "Cachorro quente",
-          "Canjica",
-          "Mesa de doces típicos"
-        ],
-        color:"green"
-      },
-      {
-        title:"Bebidas",
-        items:[
-          "Refrigerante",
-          "Suco", 
-          "Chopp"
-        ],
-        color:"green"
-      },
-      {
-        title:"Atividades",
-        items:[
-          "Jack & Jill junino (premiação)",
-          "Quadrilha",
-          "Correio elegante", 
-          "Brincadeiras",
+          "O espaço livre do St. Patricks Day acontecerá no sábado, dia 16/08, e será  OBRIGATÓRIO IR COM ROUPA VERDE!",
+          "O espaço livre sem consumo de bebida alcoólica acontece normalmente, com duração de 3 horas, e está liberado para todos os alunos matriculados na rede. Aceitamos Gympass/TotalPass. Visitantes e ex-alunos deverão pagar uma taxa de R$15 a parte.",
+          "Nesse dia, teremos bastante XEQUE MATE disponível.  Caso queira participar do consumo da bebida alcoólica, será feita uma taxa de R$30 por PESSOA.",
+          "Pagamentos aceitos somente até o dia 14/08! Após essa data, a venda ocorrerá no local por um valor de R$40"
         ],
         color:"green"
       },
       {
         title:"⚠️ Observações Importantes",
         items:[
-          "⚠️ Crianças e Jovens menores de 18 anos só podem permanecer no local com o responsável legal."
+          "Venha de verde!"
         ],
         color:"yellow"
       }
