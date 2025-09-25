@@ -1145,6 +1145,26 @@ function getNextDateForDay(dayName) {
   });
 }
 
+// Função para obter arquivo do Drive pelo nome
+function getAttachmentFile() {
+  try {
+    const fileName = 'horarios.jpeg';
+    const files = DriveApp.getFilesByName(fileName);
+    
+    if (files.hasNext()) {
+      const file = files.next();
+      Logger.log('Arquivo encontrado:', file.getName());
+      return file;
+    } else {
+      Logger.log('Arquivo não encontrado:', fileName);
+      return null;
+    }
+  } catch (error) {
+    Logger.log('Erro ao buscar arquivo:', error);
+    return null;
+  }
+}
+
 function saveExperimentalEnrollment(enrollmentData) {
   try {
     // Obter dados da semana gratuita para determinar o tipo de semana
@@ -1278,11 +1298,30 @@ Atenciosamente,
 Equipe Involvent - Escola de Dança
       `;
       
-      MailApp.sendEmail({
+      // Obter arquivo do Google Drive para anexar
+      let attachment = null;
+      const file = getAttachmentFile();
+      if (file) {
+        try {
+          attachment = file.getBlob();
+          Logger.log('Arquivo anexado com sucesso:', file.getName());
+        } catch (attachmentError) {
+          Logger.log('Erro ao obter blob do arquivo:', attachmentError);
+        }
+      }
+
+      const emailOptions = {
         to: enrollmentData.email,
         subject: `Confirmação de Inscrição - ${tipoSemana} Involvent`,
         body: studentEmailBody
-      });
+      };
+
+      // Adicionar anexo se disponível
+      if (attachment) {
+        emailOptions.attachments = [attachment];
+      }
+
+      MailApp.sendEmail(emailOptions);
       
     } catch (emailError) {
       Logger.log('Erro ao enviar email:', emailError);

@@ -5,14 +5,11 @@ const About = () => {
     { number: '15+', label: 'Modalidades de Dança' },
     { number: '5.000+', label: 'Pessoas Transformadas' },
     { number: '2017', label: 'Desde' },
-    { number: '100%', label: 'Comunidade Acolhedora' }
+    { number: '100%', label: 'Comunidade Acolhedora' },
+    { number: '', label: 'Pagamento Facilitado' },
+    { number: '', label: 'Comunidade de Alunos Exclusiva' }
   ];
 
-  const features = [
-    'Mais de 15 modalidades de dança',
-    'Pagamento facilitado',
-    'Comunidade de alunos exclusiva'
-  ];
 
   return (
     <section id="about" className="about">
@@ -44,33 +41,12 @@ const About = () => {
               e comemorar cada conquista com você.
             </p>
             
-            <h3>Destaques</h3>
-            <ul>
-              {features.map((feature, index) => (
-                <li key={index}>
-                  <i className="fas fa-check"></i>
-                  {feature}
-                </li>
-              ))}
-            </ul>
-            
-            <div className="about-link">
-              <a 
-                href="https://www.involvent.com.br/" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="btn btn-secondary"
-              >
-                <i className="fas fa-external-link-alt"></i>
-                Saiba mais sobre a Involvent
-              </a>
-            </div>
           </div>
           
           <div className="about-stats">
             {stats.map((stat, index) => (
               <div key={index} className="stat-item">
-                <h3>{stat.number}</h3>
+                {stat.number !== '' ? <h3>{stat.number}</h3> : <i className="fas fa-check"></i>}
                 <p>{stat.label}</p>
               </div>
             ))}

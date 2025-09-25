@@ -100,27 +100,7 @@ const Contact = ({ onTrialClick }) => {
         </div>
 
         <div className="contact-content">
-          <div className="contact-info">
-            <div className="contact-item">
-              <h3>📍 Endereço</h3>
-              <p>Rua das Flores, 123<br />Centro - Campinas/SP</p>
-            </div>
-            
-            <div className="contact-item">
-              <h3>📞 Telefone</h3>
-              <p>(19) 99888-2451</p>
-            </div>
-            
-            <div className="contact-item">
-              <h3>📧 E-mail</h3>
-              <p>contato@involvent.com.br</p>
-            </div>
-            
-            <div className="contact-item">
-              <h3>🕒 Horário de Funcionamento</h3>
-              <p>Segunda a Sexta: 14h às 22h<br />Sábado: 9h às 17h</p>
-            </div>
-          </div>
+
 
           <form onSubmit={handleSubmit} className="contact-form">
             <div className="form-group">
@@ -181,6 +161,28 @@ const Contact = ({ onTrialClick }) => {
               {isSubmitting ? '⏳ Salvando...' : 'Enviar Mensagem'}
             </button>
           </form>
+
+          <div className="contact-info">
+            <div className="contact-item">
+              <h3>📍 Endereço</h3>
+              <p>Rua das Flores, 123<br />Centro - Campinas/SP</p>
+            </div>
+            
+            <div className="contact-item">
+              <h3>📞 Telefone</h3>
+              <p>(19) 99888-2451</p>
+            </div>
+            
+            <div className="contact-item">
+              <h3>📧 E-mail</h3>
+              <p>contato.involvent@gmail.com</p>
+            </div>
+            
+            <div className="contact-item">
+              <h3>🕒 Horário de Funcionamento</h3>
+              <p>Segunda a Sexta: 14h às 22h<br />Sábado: 9h às 17h</p>
+            </div>
+          </div>
         </div>
 
         <div className="cta-section">

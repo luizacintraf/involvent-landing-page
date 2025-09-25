@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const FAQ = () => {
+const FAQ = ({ onTrialClick }) => {
   const [openIndex, setOpenIndex] = useState(null);
 
   const faqs = [

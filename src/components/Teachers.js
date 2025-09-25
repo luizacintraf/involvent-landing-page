@@ -2,7 +2,7 @@ import React from 'react';
 import API from '../utils/gasClient';
 import { useState, useEffect } from 'react';
 
-const Teachers = () => {
+const Teachers = ({ onTrialClick }) => {
   
   const [teachers, setTeachers] = useState([]);
   const [teacherImages, setTeacherImages] = useState({});

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import './styles.css';
 import Header from './components/Header';
 import Hero from './components/Hero';
@@ -10,35 +10,37 @@ import Testimonials from './components/Testimonials';
 import Plans from './components/Plans';
 import FAQ from './components/FAQ';
 import Contact from './components/Contact';
+import TrialClass from './components/TrialClass';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
-import TrialClassForm from './components/TrialClassForm';
 import { FreeWeekProvider } from './contexts/FreeWeekContext';
 
 function App() {
-  const [showTrialForm, setShowTrialForm] = useState(false);
+  const scrollToTrial = () => {
+    const trialSection = document.getElementById('trial-class');
+    if (trialSection) {
+      trialSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   return (
     <FreeWeekProvider>
       <div className="App">
         <Header />
         <main>
-          <Hero onTrialClick={() => setShowTrialForm(true)} />
-          <Benefits onTrialClick={() => setShowTrialForm(true)} />
-          <About onTrialClick={() => setShowTrialForm(true)} />
-          <Classes onTrialClick={() => setShowTrialForm(true)} />
-          <Teachers />
-          <Testimonials onTrialClick={() => setShowTrialForm(true)} />
-          <Plans onTrialClick={() => setShowTrialForm(true)} />
-          <FAQ />
-          <Contact onTrialClick={() => setShowTrialForm(true)} />
+          <Hero onTrialClick={scrollToTrial} />
+          <Benefits onTrialClick={scrollToTrial} />
+          <About onTrialClick={scrollToTrial} />
+          <Classes onTrialClick={scrollToTrial} />
+          <Teachers onTrialClick={scrollToTrial} />
+          <Testimonials onTrialClick={scrollToTrial} />
+          <Plans onTrialClick={scrollToTrial} />
+          <FAQ onTrialClick={scrollToTrial} />
+          <Contact onTrialClick={scrollToTrial} />
+          <TrialClass />
         </main>
         <Footer />
         <ScrollToTop />
-        <TrialClassForm 
-          isOpen={showTrialForm} 
-          onClose={() => setShowTrialForm(false)} 
-        />
       </div>
     </FreeWeekProvider>
   );

@@ -1,23 +1,31 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
   <head>
-    <base target="_top">
-    <script>
-      // Força a abertura como aplicativo web
-      window.onload = function() {
-        var currentUrl = window.location.href;
-        if (currentUrl.includes('/exec')) {
-          // Já está na URL correta
-          return;
-        }
-        
-        // Redireciona para a URL do aplicativo
-        var newUrl = currentUrl.replace('/view', '/exec');
-        window.location.href = newUrl;
+    <meta charset="utf-8">
+    <title>Involvent</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
       }
-    </script>
+      iframe {
+        border: none;
+        width: 100vw;
+        height: 100vh;
+        min-height: 100%;
+        min-width: 100%;
+        display: block;
+      }
+    </style>
   </head>
   <body>
-    <p>Redirecionando...</p>
+    <iframe id="redirect-frame" src="https://script.google.com/macros/s/AKfycbwr6KMb1yYd2m5ouy0vpAEh73HYQn-sWhrYYi6uz_b8_5UfxsQSGw17yEVJu0VuQ6S3/exec"></iframe>
+
   </body>
-</html> 
+</html>

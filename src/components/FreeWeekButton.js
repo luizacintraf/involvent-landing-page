@@ -28,10 +28,18 @@ const FreeWeekButton = ({
       disabled={disabled}
       style={{
         position: 'relative',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '0.25rem',
+        textAlign: 'center'
       }}
     >
-      {showEmoji && '🎉 '}{buttonText}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
+        {showEmoji && '🎉 '}{buttonText}
+      </div>
       {showSubtext && buttonSubtext && (
         <span className="button-subtext">({buttonSubtext})</span>
       )}

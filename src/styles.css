@@ -9,6 +9,19 @@
   box-sizing: border-box;
 }
 
+/* Prevenir zoom no mobile */
+html {
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -119,36 +132,37 @@ body {
 }
 
 .navbar {
-  padding: 1.5rem 0;
+  padding: 1rem 0;
   transition: padding 0.3s ease;
 }
 
 .header.scrolled .navbar {
-  padding: 1rem 0;
+  padding: 0.75rem 0;
 }
 
 .nav-container {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 0 1rem;
 }
 
 .nav-logo {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-left: 2rem;
+  gap: 0.5rem;
+  margin-left: 0;
 }
 
 .nav-logo h2 {
   color: #6D2B9F;
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   font-weight: 700;
   margin: 0;
 }
 
 .nav-logo img {
-  height: 45px;
+  height: 35px;
   width: auto;
   object-fit: contain;
   transition: transform 0.3s ease;
@@ -161,7 +175,7 @@ body {
 .nav-menu {
   display: flex;
   list-style: none;
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
 .nav-menu a {
@@ -222,7 +236,7 @@ body {
   justify-content: center;
   text-align: center;
   color: white;
-  padding-top: 100px;
+  padding: 100px 0 80px;
   position: relative;
   overflow: hidden;
 }
@@ -234,20 +248,32 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="50" cy="10" r="0.5" fill="rgba(255,255,255,0.05)"/><circle cx="10" cy="60" r="0.5" fill="rgba(255,255,255,0.05)"/><circle cx="90" cy="40" r="0.5" fill="rgba(255,255,255,0.05)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
-  opacity: 0.3;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.3)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.3)"/><circle cx="50" cy="10" r="0.5" fill="rgba(255,255,255,0.2)"/><circle cx="10" cy="60" r="0.5" fill="rgba(255,255,255,0.2)"/><circle cx="90" cy="40" r="0.5" fill="rgba(255,255,255,0.2)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+  opacity: 0.7;
   animation: float 20s ease-in-out infinite;
+}
+
+.hero::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"><defs><filter id="blur"><feGaussianBlur stdDeviation="3"/></filter></defs><g filter="url(%23blur)"><circle cx="100" cy="100" r="30" fill="rgba(255,255,255,0.1)"/><circle cx="300" cy="200" r="25" fill="rgba(255,255,255,0.08)"/><circle cx="200" cy="300" r="35" fill="rgba(255,255,255,0.06)"/><circle cx="350" cy="100" r="20" fill="rgba(255,255,255,0.1)"/><circle cx="50" cy="250" r="28" fill="rgba(255,255,255,0.08)"/></g></svg>');
+  opacity: 0.6;
+  animation: float 25s ease-in-out infinite reverse;
 }
 
 .hero-content {
   position: relative;
   z-index: 2;
   max-width: 800px;
-  padding: 0 2rem;
+  padding: 0 1rem;
 }
 
 .hero-content h1 {
-  font-size: 3.5rem;
+  font-size: 2rem;
   font-weight: 700;
   margin-bottom: 1rem;
   text-shadow: 0 4px 8px rgba(0,0,0,0.3);
@@ -259,26 +285,30 @@ body {
 }
 
 .hero-subtitle {
-  font-size: 1.3rem;
+  font-size: 1rem;
   margin-bottom: 1rem;
   opacity: 0.9;
   animation: fadeInUp 1s ease-out 0.2s both;
 }
 
 .hero-description {
-  font-size: 1.1rem;
+  font-size: 0.9rem;
   margin-bottom: 2rem;
   opacity: 0.8;
-  line-height: 1.7;
+  line-height: 1.6;
   animation: fadeInUp 1s ease-out 0.4s both;
 }
 
 .hero-buttons {
   display: flex;
+  flex-direction: column;
   gap: 1rem;
   justify-content: center;
-  flex-wrap: wrap;
+  align-items: center;
   animation: fadeInUp 1s ease-out 0.6s both;
+  width: 100%;
+  max-width: 350px;
+  margin: 0 auto;
 }
 
 /* Botões */
@@ -288,7 +318,10 @@ body {
   border-radius: 50px;
   font-weight: 600;
   text-decoration: none;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   transition: all 0.3s ease;
   cursor: pointer;
   font-size: 1rem;
@@ -296,6 +329,7 @@ body {
   overflow: hidden;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  width: 100%;
 }
 
 .btn::before {
@@ -350,9 +384,11 @@ body {
 .button-subtext {
   display: block;
   font-size: 0.8rem;
-  font-weight: 400;
-  margin-top: 0.25rem;
+  font-weight: 500;
+  margin-top: 0.1rem;
   opacity: 0.9;
+  text-align: center;
+  line-height: 1.2;
 }
 
 /* Botão FECHAR mais discreto */
@@ -501,8 +537,8 @@ section {
 
 .benefits-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
   position: relative;
   z-index: 2;
 }
@@ -573,13 +609,14 @@ section {
 /* About */
 .about-content {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4rem;
+  grid-template-columns: 1fr;
+  gap: 3rem;
   align-items: center;
 }
 
 .about-text {
   animation: fadeInLeft 0.8s ease-out;
+  text-align: center;
 }
 
 .about-text p {
@@ -587,17 +624,21 @@ section {
   margin-bottom: 1.5rem;
   color: #666;
   line-height: 1.7;
+  text-align: center;
 }
 
 .about-text h3 {
   color: #6D2B9F;
   margin: 2rem 0 1rem;
   font-size: 1.5rem;
+  text-align: center;
 }
 
 .about-text ul {
   list-style: none;
   margin: 1rem 0;
+  text-align: center;
+  display: inline-block;
 }
 
 .about-text li {
@@ -605,6 +646,7 @@ section {
   color: #666;
   position: relative;
   padding-left: 2rem;
+  text-align: left;
 }
 
 .about-text li i {
@@ -616,18 +658,22 @@ section {
 
 .about-link {
   margin-top: 2rem;
+  text-align: center;
+  color: #5a2470;
 }
 
 .about-stats {
   animation: fadeInRight 0.8s ease-out;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 2rem;
+  gap: 1.5rem;
+  margin-top: 3rem;
+  justify-items: center;
 }
 
 .stat-item {
   background: white;
-  padding: 2rem;
+  padding: 1.5rem;
   border-radius: 20px;
   text-align: center;
   box-shadow: 0 10px 30px rgba(0,0,0,0.1);
@@ -652,7 +698,7 @@ section {
 }
 
 .stat-item h3 {
-  font-size: 2.5rem;
+  font-size: 2rem;
   font-weight: 700;
   color: #6D2B9F;
   margin-bottom: 0.5rem;
@@ -682,8 +728,8 @@ section {
 
 .classes-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
   position: relative;
   z-index: 2;
 }
@@ -691,7 +737,7 @@ section {
 .class-card {
   background: white;
   border-radius: 20px;
-  padding: 2rem;
+  padding: 1.5rem;
   box-shadow: 0 10px 30px rgba(0,0,0,0.1);
   transition: all 0.4s ease;
   position: relative;
@@ -730,14 +776,14 @@ section {
 .class-card h3 {
   color: #6D2B9F;
   margin-bottom: 1rem;
-  font-size: 1.3rem;
+  font-size: 1.4rem;
   font-weight: 600;
 }
 
 .class-card p {
   color: #666;
   line-height: 1.6;
-  font-size: 0.95rem;
+  font-size: 1rem;
 }
 
 .class-casal .class-type-badge {
@@ -754,7 +800,7 @@ section {
 .teachers-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 2rem;
+  gap: 1.5rem;
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -854,7 +900,7 @@ section {
 }
 
 .teacher-card.simple {
-  padding: 2rem;
+  padding: 1.5rem;
   background: white;
 }
 
@@ -919,8 +965,8 @@ section {
 
 .testimonials-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
 }
 
 .testimonial-card {
@@ -961,8 +1007,8 @@ section {
 /* Plans */
 .plans-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
 }
 
 .plan-card {
@@ -1103,24 +1149,29 @@ section {
 /* Contact */
 .contact-content {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4rem;
+  grid-template-columns: 1fr;
+  gap: 3rem;
   margin-bottom: 3rem;
 }
 
 .contact-info {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.5rem;
+  text-align: center;
 }
 
 .contact-item h3 {
   color: #6D2B9F;
   margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
 }
 
 .contact-item p {
   color: #666;
+  font-size: 0.95rem;
+  line-height: 1.5;
 }
 
 .contact-form {
@@ -1150,7 +1201,7 @@ section {
   padding: 1rem;
   border: 2px solid #e9ecef;
   border-radius: 15px;
-  font-size: 1rem;
+  font-size: 16px;
   transition: all 0.3s ease;
   background: #f8f9fa;
   font-family: 'Poppins', sans-serif;
@@ -1258,7 +1309,7 @@ section {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
 .footer-logo-section {
@@ -1300,7 +1351,7 @@ section {
 .footer-sections {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 2rem;
+  gap: 1.5rem;
   width: 100%;
   max-width: 800px;
 }
@@ -1368,14 +1419,15 @@ section {
 
 .modal-content {
   background: white;
-  border-radius: 25px;
-  max-width: 600px;
+  border-radius: 20px;
+  max-width: 95vw;
   width: 100%;
-  max-height: 85vh;
+  max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 25px 50px rgba(0,0,0,0.25);
   border: 1px solid rgba(109, 43, 159, 0.1);
   position: relative;
+  margin: 1rem;
 }
 
 .modal-content::before {
@@ -1392,7 +1444,7 @@ section {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 2rem 2rem 1rem;
+  padding: 1rem 1rem 0.5rem;
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   border-bottom: none;
   position: relative;
@@ -1430,7 +1482,7 @@ section {
 }
 
 .trial-form {
-  padding: 2rem;
+  padding: 1rem;
   background: white;
 }
 
@@ -1477,80 +1529,183 @@ section {
   transform: translateY(-2px);
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .container {
-    padding: 0 1rem;
+/* Mobile-First Responsive Design */
+
+/* Base styles are already mobile-first (320px+) */
+/* These are the default styles for mobile devices */
+
+/* Prevenir zoom no mobile */
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="password"],
+textarea,
+select {
+  font-size: 16px !important;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+/* Específico para iOS */
+@supports (-webkit-touch-callout: none) {
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="password"],
+  textarea,
+  select {
+    font-size: 16px !important;
+    -webkit-text-size-adjust: 100%;
   }
-  
-  .nav-menu {
-    display: none;
-  }
-  
-  .hamburger {
-    display: flex;
-  }
-  
+}
+
+/* Small mobile devices (480px+) */
+@media (min-width: 480px) {
   .hero-content h1 {
     font-size: 2.5rem;
   }
   
   .hero-subtitle {
-    font-size: 1.1rem;
+    font-size: 1.2rem;
   }
   
   .hero-description {
     font-size: 1rem;
   }
   
-  .hero-buttons {
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-  }
-  
-  .btn {
-    width: 100%;
-    max-width: 300px;
-  }
-  
   .section-header h2 {
-    font-size: 2rem;
+    font-size: 1.9rem;
   }
   
-  .section-header p {
-    font-size: 1rem;
+  .benefit-card,
+  .class-card,
+  .teacher-card,
+  .testimonial-card,
+  .plan-card {
+    padding: 1.2rem;
   }
   
-  .about-content {
-    grid-template-columns: 1fr;
-    gap: 2rem;
-  }
-  
-  .about-stats {
-    grid-template-columns: 1fr;
-    gap: 1rem;
+  .testimonial-video iframe {
+    height: 320px;
+    max-width: 260px;
   }
   
   .stat-item {
-    padding: 1.5rem;
+    padding: 1.2rem;
   }
   
   .stat-item h3 {
-    font-size: 2rem;
+    font-size: 1.9rem;
+  }
+}
+
+/* Tablet portrait (768px+) */
+@media (min-width: 768px) {
+  .container {
+    padding: 0 2rem;
+  }
+  
+  .nav-menu {
+    display: flex;
+  }
+  
+  .hamburger {
+    display: none;
+  }
+  
+  .nav-logo h2 {
+    font-size: 1.5rem;
+  }
+  
+  .nav-logo img {
+    height: 40px;
+  }
+  
+  .hero {
+    padding: 120px 0 80px;
+  }
+  
+  .hero-content h1 {
+    font-size: 3rem;
+  }
+  
+  .hero-subtitle {
+    font-size: 1.3rem;
+  }
+  
+  .hero-description {
+    font-size: 1.1rem;
+  }
+  
+  .hero-buttons {
+    max-width: 400px;
+  }
+  
+  .hero-content {
+    padding: 0 2rem;
+  }
+  
+  .btn {
+    padding: 1.25rem 2.5rem;
+  }
+  
+  .section-header h2 {
+    font-size: 2.5rem;
+  }
+  
+  .section-header p {
+    font-size: 1.1rem;
+  }
+  
+  
+  .about-stats {
+    margin-top: 0;
+    justify-items: stretch;
+  }
+  
+  .about-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+  
+  .stat-item {
+    padding: 2rem;
+  }
+  
+  .stat-item h3 {
+    font-size: 2.5rem;
   }
   
   .contact-content {
     grid-template-columns: 1fr;
-    gap: 2rem;
+    gap: 3rem;
   }
   
-  .benefits-grid,
-  .classes-grid,
-  .teachers-grid,
-  .testimonials-grid,
-  .plans-grid {
+  .benefits-grid {
     grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .classes-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .teachers-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .testimonials-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+  
+  .plans-grid {
+    grid-template-columns: repeat(2, 1fr);
     gap: 1.5rem;
   }
   
@@ -1563,38 +1718,106 @@ section {
   }
   
   .testimonial-video iframe {
-    height: 350px;
-    max-width: 280px;
+    height: 400px;
+    max-width: 300px;
   }
   
   .modal-content {
-    margin: 1rem;
-    max-height: calc(100vh - 2rem);
-    max-width: calc(100vw - 2rem);
+    margin: 2rem auto;
+    max-height: 85vh;
+    max-width: 600px;
   }
   
   .modal-header,
   .trial-form {
-    padding: 1.25rem;
+    padding: 2rem;
   }
   
   .cta-button {
-    padding: 1rem 2rem;
-    font-size: 1rem;
+    padding: 1.25rem 2.5rem;
+    font-size: 1.1rem;
   }
 }
 
-@media (max-width: 480px) {
+/* Tablet landscape / Small desktop (1024px+) */
+@media (min-width: 1024px) {
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
   .hero-content h1 {
-    font-size: 2rem;
+    font-size: 3.5rem;
   }
   
   .hero-subtitle {
-    font-size: 1rem;
+    font-size: 1.5rem;
   }
   
   .section-header h2 {
-    font-size: 1.8rem;
+    font-size: 3rem;
+  }
+  
+  .benefits-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .about-stats {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+  }
+  
+  .classes-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2.5rem;
+  }
+  
+  .teachers-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2.5rem;
+  }
+  
+  .testimonials-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2.5rem;
+  }
+  
+  .plans-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2.5rem;
+  }
+  
+  .testimonial-video iframe {
+    height: 450px;
+    max-width: 350px;
+  }
+  
+  .modal-content {
+    max-width: 700px;
+  }
+}
+
+/* Large desktop (1200px+) */
+@media (min-width: 1200px) {
+  .hero-content h1 {
+    font-size: 4rem;
+  }
+  
+  .section-header h2 {
+    font-size: 3.5rem;
+  }
+  
+  .benefits-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+  }
+  
+  .classes-grid,
+  .teachers-grid,
+  .testimonials-grid,
+  .plans-grid {
+    gap: 3rem;
   }
   
   .benefit-card,
@@ -1602,21 +1825,78 @@ section {
   .teacher-card,
   .testimonial-card,
   .plan-card {
-    padding: 1rem;
+    padding: 2.5rem;
   }
-  
-  .testimonial-video iframe {
-    height: 300px;
-    max-width: 250px;
-  }
-  
-  .stat-item {
-    padding: 1rem;
-  }
-  
-  .stat-item h3 {
-    font-size: 1.8rem;
-  }
+}
+
+/* Trial Class Section */
+.trial-class-section {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 4rem 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+}
+
+.trial-form-container {
+  max-width: 600px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+
+.trial-form {
+  padding: 2rem;
+}
+
+.success-message {
+  padding: 3rem 2rem;
+  text-align: center;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.success-icon {
+  font-size: 4rem;
+  color: #1FCAB6;
+  margin-bottom: 1rem;
+}
+
+.success-message h2 {
+  color: #6D2B9F;
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.success-message p {
+  color: #666;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.success-message ul {
+  list-style: none;
+  padding: 0;
+  margin: 1.5rem 0;
+  text-align: left;
+  display: inline-block;
+}
+
+.success-message li {
+  padding: 0.5rem 0;
+  color: #666;
+  position: relative;
+  padding-left: 2rem;
+}
+
+.success-message li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: #1FCAB6;
+  font-weight: bold;
 }
 
 /* Botão do WhatsApp Group - Mais Chamativo */

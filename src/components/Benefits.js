@@ -81,12 +81,11 @@ const Benefits = ({ onTrialClick }) => {
           ))}
         </div>
         
-        <div style={{ textAlign: 'center', marginTop: '3rem' }}>
+
           <FreeWeekButton 
+            style={{ marginTop: '3rem' }}
             onClick={onTrialClick}
-            className="cta-button"
           />
-        </div>
       </div>
     </section>
   );
